@@ -7,6 +7,7 @@ interface ResultModalProps {
 }
 
 const ResultModal: React.FC<ResultModalProps> = ({ isOpen, question, onClose }) => {
+  // モーダルを開く条件：isOpen が true かつ question が存在する
   if (!isOpen || !question) return null;
 
   return (
