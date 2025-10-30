@@ -2,6 +2,7 @@
 import React from 'react';
 import { SEGMENTS } from "../constants";
 
+
 // このコンポーネントに渡されるデータ（props）の形を定義しています。
 interface SegmentControlProps {
   numberOfSegments: number; // 現在のセクション数
