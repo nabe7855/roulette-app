@@ -2,7 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 // アプリケーションの本体である App コンポーネントを読み込んでいます。
-import App from './App';
+import App from './src/App';
 
 // public/index.html ファイル内にある、idが'root'の要素を探します。
 // ここが、Reactアプリケーションが描画される場所になります。

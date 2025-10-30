@@ -2,24 +2,26 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AppMode } from "./types";
-import { DEFAULT_QUESTIONS } from "../constants";
-// import useLocalStorage from "../../src/hooks/useLocalStorage";
-import { useRoulette } from "../../hooks/useRoulette";
-// import ToggleSwitch from "../components/ToggleSwitch";
-import RouletteWheel from "../components/RouletteWheel";
-// import Slot from "../app/components/Slot";
-// import icons from "../components/icons";
-import WinnerModal from "../components/WinnerModal";
+import { Settings as SettingsIcon } from "lucide-react";
 
+import { AppMode } from "../types";
+import { DEFAULT_QUESTIONS } from "../constants";
+
+import { useRoulette } from "../hooks/useRoulette";
+import { useLocalStorage } from "../hooks/useLocalStorage";
+
+import ToggleSwitch from "../components/ToggleSwitch";
+import RouletteWheel from "../components/RouletteWheel";
+import SlotMachine from "../slotComponents/SlotMachine";
+import WinnerModal from "../components/WinnerModal";
 
 export default function Page() {
   const router = useRouter();
 
-  // 🌸 モード管理
+  // 🌸 モード管理（ルーレット or スロット）
   const [mode, setMode] = useLocalStorage<AppMode>("app-mode", AppMode.Roulette);
 
-  // 🌸 質問リスト・履歴
+  // 🌸 質問リストと履歴管理
   const [questions] = useLocalStorage<string[]>("questions", DEFAULT_QUESTIONS);
   const [askedIndexes, setAskedIndexes] = useLocalStorage<number[]>("asked-indexes", []);
 
@@ -28,37 +30,37 @@ export default function Page() {
   const [displayQuestions, setDisplayQuestions] = useState<string[]>([]);
   const [targetQuestion, setTargetQuestion] = useState<string | null>(null);
 
-  // 🎡 ルーレット用ステート
+  // 🎡 ルーレット用
   const [rouletteSelectedQuestion, setRouletteSelectedQuestion] = useState<string | null>(null);
   const [isRouletteResultOpen, setIsRouletteResultOpen] = useState(false);
 
-  // 🎰 スロット用ステート
+  // 🎰 スロット用
   const [slotSelectedQuestion, setSlotSelectedQuestion] = useState<string | null>(null);
   const [isSlotResultOpen, setIsSlotResultOpen] = useState(false);
 
-  // 利用可能な質問を抽出
+  // 有効な質問を取得
   const getAvailableQuestions = useCallback(() => {
     return questions
       .map((q, i) => ({ question: q, index: i }))
       .filter((item) => !askedIndexes.includes(item.index));
   }, [questions, askedIndexes]);
 
-  // 🎯 スタートボタン
+  // 🎯 スタートボタン処理
   const handleStart = () => {
     if (isSpinning) return;
 
     const available = getAvailableQuestions();
     if (available.length === 0) {
-      alert("すべての質問が出題されました！「クリア」ボタンでリセットしてください。");
+      alert("すべての質問が出題されました！「履歴をクリア」ボタンでリセットしてください。");
       return;
     }
 
     setIsSpinning(true);
 
-    // 🎯 1. 結果を先に決定
+    // 結果を決定
     const finalPick = available[Math.floor(Math.random() * available.length)];
 
-    // 🎨 2. 表示用リストを作成（必ず結果を含む）
+    // 表示するリストを作成
     const others = available
       .filter((q) => q.question !== finalPick.question)
       .map((q) => q.question)
@@ -69,16 +71,13 @@ export default function Page() {
       .sort(() => Math.random() - 0.5)
       .slice(0, 10);
 
-    // ✅ 念のため保証（結果が確実に含まれる）
     if (!finalDisplayQuestions.includes(finalPick.question)) {
       finalDisplayQuestions.push(finalPick.question);
     }
 
-    // 🎯 3. 状態更新（同期ズレ防止でtargetを遅延）
     setDisplayQuestions(finalDisplayQuestions);
     setTimeout(() => setTargetQuestion(finalPick.question), 50);
 
-    // 🎬 4. 回転終了後の処理
     setTimeout(() => {
       const resultQuestion = finalPick.question;
       const resultIndex = questions.findIndex((q) => q === resultQuestion);
@@ -96,13 +95,13 @@ export default function Page() {
     }, 5000);
   };
 
-  // 履歴クリア
+  // 履歴リセット
   const handleClear = () => {
     setAskedIndexes([]);
     setRouletteSelectedQuestion(null);
     setSlotSelectedQuestion(null);
     setTargetQuestion(null);
-    alert("履歴がクリアされました。新しいセッションを開始できます。");
+    alert("履歴をクリアしました！");
   };
 
   // モード切替
@@ -112,38 +111,31 @@ export default function Page() {
     );
   }, [setMode]);
 
-  // モード変更時のリセット
+  // モード変更時に状態をリセット
   useEffect(() => {
-    const id = setTimeout(() => {
-      if (mode === AppMode.Roulette) {
-        setSlotSelectedQuestion(null);
-        setIsSlotResultOpen(false);
-      } else {
-        setRouletteSelectedQuestion(null);
-        setIsRouletteResultOpen(false);
-      }
-    }, 0);
-    return () => clearTimeout(id);
+    if (mode === AppMode.Roulette) {
+      setSlotSelectedQuestion(null);
+      setIsSlotResultOpen(false);
+    } else {
+      setRouletteSelectedQuestion(null);
+      setIsRouletteResultOpen(false);
+    }
   }, [mode]);
 
-  // 初期表示リスト
+  // 初期の表示リスト
   useEffect(() => {
     const available = getAvailableQuestions();
     const initialDisplay = available
       .map((q) => q.question)
       .sort(() => Math.random() - 0.5)
       .slice(0, 10);
-
-    const id = setTimeout(() => {
-      setDisplayQuestions(initialDisplay);
-    }, 0);
-    return () => clearTimeout(id);
+    setDisplayQuestions(initialDisplay);
   }, [questions, getAvailableQuestions]);
 
   const availableCount = getAvailableQuestions().length;
   const totalCount = questions.length;
 
-  // 🎡 UI
+  // 🎨 UI
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 flex flex-col items-center justify-center p-4 font-sans relative">
       {/* ⚙ 設定ボタン */}
@@ -167,16 +159,18 @@ export default function Page() {
         </p>
       </header>
 
-      {/* メイン */}
+      {/* メインコンテンツ */}
       <main className="flex-grow flex flex-col items-center justify-center w-full">
         {mode === AppMode.Roulette ? (
-          <Roulette
-            questions={displayQuestions}
-            isSpinning={isSpinning}
-            targetQuestion={targetQuestion}
-          />
+         <RouletteWheel
+  segments={displayQuestions.map((q) => ({
+    label: q,
+    color: "#4ade80", // 💚お好みで色を変えてもOK！
+  }))}
+  rotation={isSpinning ? 360 : 0}
+/>
         ) : (
-          <Slot
+          <SlotMachine
             questions={questions}
             isSpinning={isSpinning}
             selectedQuestion={slotSelectedQuestion}
@@ -214,13 +208,13 @@ export default function Page() {
 
       {/* ✅ モーダル */}
       {mode === AppMode.Roulette ? (
-        <ResultModal
+        <WinnerModal
           isOpen={isRouletteResultOpen}
           question={rouletteSelectedQuestion}
           onClose={() => setIsRouletteResultOpen(false)}
         />
       ) : (
-        <ResultModal
+        <WinnerModal
           isOpen={isSlotResultOpen}
           question={slotSelectedQuestion}
           onClose={() => setIsSlotResultOpen(false)}
