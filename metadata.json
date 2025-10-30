@@ -1,0 +1,5 @@
+{
+  "name": "Japanese Roulette Wheel",
+  "description": "A visually faithful recreation of a Japanese roulette wheel. Click the button to spin the wheel and see which random personality trait you land on.",
+  "requestFramePermissions": []
+}

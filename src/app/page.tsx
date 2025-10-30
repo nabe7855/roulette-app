@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AppMode } from "@/app/types";
-import { DEFAULT_QUESTIONS } from "../../constants";
-import useLocalStorage from "@/app/hooks/useLocalStorage";
-import ToggleSwitch from "@/app/components/ToggleSwitch";
-import Roulette from "@/app/components/Roulette";
-import Slot from "@/app/components/Slot";
-import { SettingsIcon } from "@/app/components/icons";
-import ResultModal from "@/app/components/ResultModal";
+import { AppMode } from "./types";
+import { DEFAULT_QUESTIONS } from "../constants";
+// import useLocalStorage from "../../src/hooks/useLocalStorage";
+import { useRoulette } from "../../hooks/useRoulette";
+// import ToggleSwitch from "../components/ToggleSwitch";
+import RouletteWheel from "../components/RouletteWheel";
+// import Slot from "../app/components/Slot";
+// import icons from "../components/icons";
+import WinnerModal from "../components/WinnerModal";
+
 
 export default function Page() {
   const router = useRouter();
@@ -41,7 +43,7 @@ export default function Page() {
       .filter((item) => !askedIndexes.includes(item.index));
   }, [questions, askedIndexes]);
 
-  // 🎯 スタート共通関数（ルーレットでもスロットでも使用）
+  // 🎯 スタートボタン
   const handleStart = () => {
     if (isSpinning) return;
 
@@ -53,30 +55,34 @@ export default function Page() {
 
     setIsSpinning(true);
 
-    // ランダムピック
+    // 🎯 1. 結果を先に決定
     const finalPick = available[Math.floor(Math.random() * available.length)];
-    const displayPool = [...available];
-    const tempDisplay = [finalPick.question];
 
-    while (tempDisplay.length < 10 && displayPool.length > 0) {
-      const randomIndex = Math.floor(Math.random() * displayPool.length);
-      const randomItem = displayPool[randomIndex];
-      if (randomItem && !tempDisplay.includes(randomItem.question)) {
-        tempDisplay.push(randomItem.question);
-      }
-      displayPool.splice(randomIndex, 1);
+    // 🎨 2. 表示用リストを作成（必ず結果を含む）
+    const others = available
+      .filter((q) => q.question !== finalPick.question)
+      .map((q) => q.question)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 9);
+
+    const finalDisplayQuestions = [...others, finalPick.question]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 10);
+
+    // ✅ 念のため保証（結果が確実に含まれる）
+    if (!finalDisplayQuestions.includes(finalPick.question)) {
+      finalDisplayQuestions.push(finalPick.question);
     }
 
-    const finalDisplayQuestions = tempDisplay.sort(() => Math.random() - 0.5);
+    // 🎯 3. 状態更新（同期ズレ防止でtargetを遅延）
     setDisplayQuestions(finalDisplayQuestions);
-    setTargetQuestion(finalPick.question);
+    setTimeout(() => setTargetQuestion(finalPick.question), 50);
 
-    // 回転終了後の処理
+    // 🎬 4. 回転終了後の処理
     setTimeout(() => {
-      const resultQuestion = finalDisplayQuestions[0] || finalPick.question;
+      const resultQuestion = finalPick.question;
       const resultIndex = questions.findIndex((q) => q === resultQuestion);
 
-      // ✅ モードごとに結果を分岐
       if (mode === AppMode.Roulette) {
         setRouletteSelectedQuestion(resultQuestion);
         setIsRouletteResultOpen(true);
@@ -106,52 +112,38 @@ export default function Page() {
     );
   }, [setMode]);
 
-useEffect(() => {
-  const reset = () => {
-    if (mode === AppMode.Roulette) {
-      setSlotSelectedQuestion(null);
-      setIsSlotResultOpen(false);
-    } else {
-      setRouletteSelectedQuestion(null);
-      setIsRouletteResultOpen(false);
-    }
-  };
-
-  // ⚡ 非同期化してレンダー安全に
-  const id = setTimeout(reset, 0);
-  return () => clearTimeout(id);
-}, [mode]);
-
-  // Tabキーでも切替できるように
+  // モード変更時のリセット
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Tab") {
-        event.preventDefault();
-        handleToggleMode();
+    const id = setTimeout(() => {
+      if (mode === AppMode.Roulette) {
+        setSlotSelectedQuestion(null);
+        setIsSlotResultOpen(false);
+      } else {
+        setRouletteSelectedQuestion(null);
+        setIsRouletteResultOpen(false);
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleToggleMode]);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [mode]);
 
- useEffect(() => {
-  const available = getAvailableQuestions();
-  const initialDisplay = [...available.map((q) => q.question)]
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 10);
+  // 初期表示リスト
+  useEffect(() => {
+    const available = getAvailableQuestions();
+    const initialDisplay = available
+      .map((q) => q.question)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 10);
 
-  // ⚡ setTimeoutで非同期化してReactのレンダリング完了後に反映
-  const id = setTimeout(() => {
-    setDisplayQuestions(initialDisplay);
-  }, 0);
-
-  return () => clearTimeout(id);
-}, [questions, getAvailableQuestions]);
+    const id = setTimeout(() => {
+      setDisplayQuestions(initialDisplay);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [questions, getAvailableQuestions]);
 
   const availableCount = getAvailableQuestions().length;
   const totalCount = questions.length;
 
-  // 🎡 メインUI
+  // 🎡 UI
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 flex flex-col items-center justify-center p-4 font-sans relative">
       {/* ⚙ 設定ボタン */}
@@ -170,10 +162,12 @@ useEffect(() => {
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800">
           質問{mode === AppMode.Roulette ? "ルーレット" : "スロット"}
         </h1>
-        <p className="text-gray-500 mt-2">自己PRの練習や会話のきっかけ作りに！</p>
+        <p className="text-gray-500 mt-2">
+          自己PRの練習や会話のきっかけ作りに！
+        </p>
       </header>
 
-      {/* メイン表示 */}
+      {/* メイン */}
       <main className="flex-grow flex flex-col items-center justify-center w-full">
         {mode === AppMode.Roulette ? (
           <Roulette
