@@ -2,29 +2,25 @@ import React from "react";
 import { Segment } from "../types";
 import { polarToCartesian, describeArc } from "../utils/svgUtils";
 
-// 🎡 ルーレットに渡すデータの型定義
 interface RouletteWheelProps {
-  segments: Segment[]; // 各セグメント（質問や選択肢）の情報
-  rotation: number;    // 現在の回転角度（deg）
+  segments: Segment[];
+  rotation: number;
 }
 
 /**
  * 🎯 RouletteWheel コンポーネント
- * ルーレットの盤面をSVGで描画します。
+ * SVGでルーレット盤面を描画
  */
 const RouletteWheel: React.FC<RouletteWheelProps> = ({ segments, rotation }) => {
-  const size = 500; // ルーレットの描画サイズ
+  const size = 500;
   const center = size / 2;
   const radius = size / 2 - 10;
-  const segmentAngle = 360 / segments.length; // 1セクションあたりの角度
+  const segmentAngle = 360 / segments.length;
 
   return (
-    <div className="relative w-full max-w-[500px] aspect-square">
+    <div className="relative w-full max-w-[500px] aspect-square roulette-wheel">
       {/* 🎨 ルーレット本体 */}
-      <svg
-        viewBox={`0 0 ${size} ${size}`}
-        className="w-full h-full"
-      >
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
         <g
           style={{
             transform: `rotate(${rotation}deg)`,
@@ -32,33 +28,25 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({ segments, rotation }) => 
             transition: `transform 6000ms cubic-bezier(0.25, 0.1, 0.25, 1)`,
           }}
         >
-          {/* 🎠 各セグメントを描画 */}
           {segments.map((segment, index) => {
             const startAngle = index * segmentAngle;
             const endAngle = (index + 1) * segmentAngle;
-            const pathData = describeArc(center, center, radius, startAngle, endAngle);
+            const path = describeArc(center, center, radius, startAngle, endAngle);
             const midAngle = startAngle + segmentAngle / 2;
-            const textPosition = polarToCartesian(center, center, radius * 0.7, midAngle);
+            const textPos = polarToCartesian(center, center, radius * 0.7, midAngle);
 
             return (
               <g key={index}>
-                {/* 扇形 */}
-                <path
-                  d={pathData}
-                  fill={segment.color}
-                  stroke="#fff"
-                  strokeWidth="2"
-                />
-                {/* テキスト */}
+                <path d={path} fill={segment.color} stroke="#fff" strokeWidth="2" />
                 <text
-                  x={textPosition.x}
-                  y={textPosition.y}
-                  fill="#ffffff"
+                  x={textPos.x}
+                  y={textPos.y}
+                  fill="#fff"
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize="13"
                   fontWeight="bold"
-                  transform={`rotate(${midAngle + 90}, ${textPosition.x}, ${textPosition.y})`}
+                  transform={`rotate(${midAngle + 90}, ${textPos.x}, ${textPos.y})`}
                   style={{ pointerEvents: "none", userSelect: "none" }}
                 >
                   {segment.label}
@@ -68,12 +56,12 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({ segments, rotation }) => 
           })}
         </g>
 
-        {/* 🎯 中央の白い円 */}
+        {/* 🎯 中心円 */}
         <circle
           cx={center}
           cy={center}
           r="25"
-          fill="#ffffff"
+          fill="#fff"
           stroke="#e2e8f0"
           strokeWidth="5"
         />
