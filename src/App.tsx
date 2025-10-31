@@ -1,64 +1,82 @@
-import RouletteWheel from './components/RouletteWheel';
-import WinnerModal from './components/WinnerModal';
-import Header from './components/Header';
-import SegmentControl from './components/SegmentControl';
-import SpinButton from './components/SpinButton';
-import { useRoulette } from './hooks/useRoulette';
+import React, { useState } from "react";
+import RouletteWheel from "./components/RouletteWheel";
+import WinnerModal from "./components/WinnerModal";
+import Header from "./components/Header";
+import SegmentControl from "./components/SegmentControl";
+import SpinButton from "./components/SpinButton";
+import { useRoulette } from "./hooks/useRoulette";
+import SlotMachine from "./slotComponents/SlotMachine"; // 🎰 追加！
 
-
-// Appコンポーネントを定義しています。これがアプリケーションの本体です。
+// Appコンポーネント
 const App: React.FC = () => {
-  // useRouletteフックを呼び出して、ルーレットの状態や操作関数を取得します。
-  // これにより、Appコンポーネントはロジックの詳細を知らなくても、
-  // 必要な値や関数を使うだけでよくなります。
+  // ルーレット状態管理
   const {
-    rotation, // ルーレットの現在の回転角度
-    isSpinning, // 回転中かどうかのフラグ
-    winner, // 当選したセクションの情報
-    isModalOpen, // モーダルが開いているかどうかのフラグ
-    numberOfSegments, // 現在のセクション数
-    currentSegments, // 現在表示されているセクションのリスト
-    handleSpin, // スピンを開始する関数
-    handleCloseModal, // モーダルを閉じる関数
-    handleNumberOfSegmentsChange, // セクション数を変更する関数
+    rotation,
+    isSpinning,
+    winner,
+    isModalOpen,
+    numberOfSegments,
+    currentSegments,
+    handleSpin,
+    handleCloseModal,
+    handleNumberOfSegmentsChange,
   } = useRoulette();
 
-  // return の中が、実際に画面に表示される内容です。
+  // 🔘 ルーレット or スロット モード管理
+  const [isRouletteMode, setIsRouletteMode] = useState(true);
+
   return (
-    // 全体を囲むdiv要素。Tailwind CSSで背景色やレイアウトを設定しています。
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 font-sans">
-      {/* ヘッダーコンポーネントを表示します。 */}
+      {/* ヘッダー */}
       <Header />
-      
-      {/* メインコンテンツ部分 */}
-      <main className="flex flex-col items-center space-y-6 sm:space-y-8 w-full">
-        {/* ルーレット盤コンポーネントを表示します。現在のセクションと回転角度を渡しています。 */}
-        <RouletteWheel segments={currentSegments} rotation={rotation} />
 
-        {/* コントロール部分（セクション数入力とスピンボタン） */}
-        <div className="flex flex-col items-center space-y-6 w-full max-w-md">
-          {/* セクション数コントロールコンポーネントを表示します。 */}
-          <SegmentControl
-            numberOfSegments={numberOfSegments}
-            onNumberOfSegmentsChange={handleNumberOfSegmentsChange}
-            isSpinning={isSpinning}
+      {/* 🔘 トグルボタン */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className={isRouletteMode ? "text-pink-400" : "text-gray-500"}>
+          🎡 ルーレット
+        </span>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!isRouletteMode}
+            onChange={() => setIsRouletteMode(!isRouletteMode)}
+            className="sr-only peer"
           />
-          {/* スピンボタンコンポーネントを表示します。 */}
-          <SpinButton onSpin={handleSpin} isSpinning={isSpinning} />
-        </div>
-      </main>
+          <div className="w-14 h-8 bg-gray-400 peer-focus:outline-none rounded-full peer peer-checked:bg-pink-500 transition"></div>
+          <span className="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6"></span>
+        </label>
+        <span className={!isRouletteMode ? "text-pink-400" : "text-gray-500"}>
+          🎰 スロット
+        </span>
+      </div>
 
-      {/* 
-        条件付きレンダリング: 
-        `winner` に情報があり、かつ `isModalOpen` が true の場合のみ、
-        WinnerModalコンポーネントを表示します。
-      */}
-      {winner && isModalOpen && (
-        <WinnerModal winner={winner} onClose={handleCloseModal} />
+      {/* メイン切り替え */}
+      {isRouletteMode ? (
+        // 🎡 ルーレットモード
+        <main className="flex flex-col items-center space-y-6 sm:space-y-8 w-full">
+          <RouletteWheel segments={currentSegments} rotation={rotation} />
+
+          <div className="flex flex-col items-center space-y-6 w-full max-w-md">
+            <SegmentControl
+              numberOfSegments={numberOfSegments}
+              onNumberOfSegmentsChange={handleNumberOfSegmentsChange}
+              isSpinning={isSpinning}
+            />
+            <SpinButton onSpin={handleSpin} isSpinning={isSpinning} />
+          </div>
+
+          {winner && isModalOpen && (
+            <WinnerModal winner={winner} onClose={handleCloseModal} />
+          )}
+        </main>
+      ) : (
+        // 🎰 スロットモード
+        <main className="flex flex-col items-center space-y-6 sm:space-y-8 w-full">
+          <SlotMachine />
+        </main>
       )}
     </div>
   );
 };
 
-// このAppコンポーネントを他のファイルでも使えるようにします。
 export default App;
