@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../constants";
 
-/* 🎉 結果発表モーダル（フェードイン付き） */
+/* 🎉 結果発表モーダル（フェードインつき） */
 const WinnerModal: React.FC<{ question: string; onClose: () => void }> = ({
   question,
   onClose,
@@ -28,35 +28,37 @@ const SlotMachine: React.FC = () => {
   const [leverPulled, setLeverPulled] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [displayQuestion, setDisplayQuestion] = useState("?");
-  const [isModalOpen, setIsModalOpen] = useState(false); // ✅ モーダルの状態
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const spinInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // 🎯 スピン終了後のチェック
+  /* 🎯 スピン処理 */
   useEffect(() => {
     if (isSpinning) {
-      // ランダムで質問を高速切り替え
+      // ランダムに質問を切り替える
       spinInterval.current = setInterval(() => {
         const randomQ = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
         setDisplayQuestion(randomQ);
       }, 100);
 
-      // 2秒後に停止
+      // 2秒後にストップ
       setTimeout(() => {
         if (spinInterval.current) clearInterval(spinInterval.current);
         const finalQ = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
         setDisplayQuestion(finalQ);
         setIsSpinning(false);
         setMessage(finalQ);
-        setIsModalOpen(true); // ✅ モーダルを表示
+        setIsModalOpen(true);
       }, 2000);
     }
 
+    // クリーンアップ
     return () => {
       if (spinInterval.current) clearInterval(spinInterval.current);
     };
   }, [isSpinning]);
 
-  // 🎰 スピン開始
+  /* 🎰 レバーを引いた時 */
   const handleSpin = () => {
     if (isSpinning || credits <= 0) return;
 
@@ -71,6 +73,7 @@ const SlotMachine: React.FC = () => {
     <div className="relative min-h-[600px] flex flex-col items-center justify-center p-4 font-sans bg-[#0f172a]">
       {/* 🎰 スロット筐体 */}
       <div className="relative mt-24 w-[320px] h-[550px] md:w-[400px] md:h-[650px] bg-red-700 rounded-3xl border-4 border-red-900 shadow-2xl p-4 flex flex-col items-center justify-center">
+
         {/* 上部パネル */}
         <div className="absolute top-6 w-[80%] h-12 bg-yellow-400 border-4 border-yellow-600 flex items-center justify-center rounded-lg shadow-inner">
           <span className="text-red-800 text-3xl md:text-4xl font-extrabold">
@@ -92,11 +95,19 @@ const SlotMachine: React.FC = () => {
         </div>
 
         {/* 🪙 コイン投入口 */}
-        <div className="absolute bottom-6 w-24 h-6 bg-gray-700 rounded-md border-2 border-gray-900 shadow-inner flex justify-center items-center">
+        <div className="absolute bottom-16 w-24 h-6 bg-gray-700 rounded-md border-2 border-gray-900 shadow-inner flex justify-center items-center">
           <div className="w-16 h-1.5 bg-gray-900 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]"></div>
         </div>
 
-        {/* 🎯 スタートレバー */}
+        {/* 💰 コイン排出口 */}
+        <div className="absolute bottom-2 w-[140px] h-[28px] bg-gray-800 rounded-xl border-2 border-gray-950 shadow-inner flex flex-col justify-end items-center">
+          <div className="w-20 h-2 bg-yellow-400 rounded-full shadow-[0_0_8px_rgba(255,255,0,0.6)]"></div>
+          <div className="text-yellow-400 text-xs font-semibold mt-1">
+            COIN
+          </div>
+        </div>
+
+        {/* 🎯 レバー */}
         <div
           className="absolute top-1/2 -translate-y-1/2 right-[-60px] md:right-[-80px] w-10 md:w-12 h-48 md:h-56 flex flex-col items-center cursor-pointer group"
           onClick={handleSpin}
