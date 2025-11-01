@@ -3,7 +3,6 @@ import Reel from "./Reel";
 import type { Symbol } from "../types";
 import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../constants";
 
-// 🌸 ここで受け取るpropsの型を定義！
 interface SlotMachineProps {
   questions: string[];
   isSpinning: boolean;
@@ -12,7 +11,6 @@ interface SlotMachineProps {
   disabled: boolean;
 }
 
-// 🎰 スロットマシン本体
 const SlotMachine: React.FC<SlotMachineProps> = ({
   questions,
   isSpinning,
@@ -45,7 +43,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
     }
   }, [isSpinning, checkWin]);
 
-  // 🎯 スロット開始
   const handleSpin = () => {
     if (isSpinning || disabled) return;
     setLeverPulled(true);
@@ -56,24 +53,30 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   return (
     <div className="relative min-h-[600px] flex flex-col items-center justify-center p-4 font-sans">
       {/* 💰 残高・メッセージ */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white p-4 rounded-lg text-center">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white p-4 rounded-lg text-center z-50">
         <div className="text-yellow-400 text-2xl font-bold mb-1">Credits: {credits}</div>
         <div className="text-lg h-6">{message}</div>
       </div>
 
       {/* 🎰 スロット筐体 */}
-      <div className="relative mt-24 w-[320px] h-[550px] md:w-[400px] md:h-[650px] bg-red-700 rounded-3xl border-4 border-red-900 shadow-2xl p-4 flex flex-col items-center justify-between">
+      <div className="relative mt-24 w-[320px] h-[550px] md:w-[400px] md:h-[650px] bg-red-700 rounded-3xl border-4 border-red-900 shadow-2xl p-4 flex flex-col items-center justify-center">
         {/* 上部パネル */}
-        <div className="w-full h-24 bg-yellow-400 rounded-xl border-4 border-yellow-600 shadow-inner flex items-center justify-center">
-          <span className="text-red-800 text-4xl font-extrabold">SLOT</span>
+        <div className="absolute top-6 w-[80%] h-12 bg-yellow-400 border-4 border-yellow-600 flex items-center justify-center rounded-lg shadow-inner">
+          <span className="text-red-800 text-3xl md:text-4xl font-extrabold">SLOT</span>
         </div>
 
-        {/* リール部分 */}
-        <div className="w-full bg-gray-600/50 rounded-lg p-2 border-4 border-gray-400 shadow-inner flex justify-around items-center gap-2">
-          {reels.map((symbol, index) => (
-            <Reel key={index} finalSymbol={symbol} isSpinning={isSpinning} delay={index * 400} />
-          ))}
-        </div>
+       {/* 🎡 質問表示ウィンドウ（パターン③・拡張版） */}
+<div className="absolute inset-0 flex justify-center items-center">
+  <div className="w-[92%] h-[130px] md:h-[160px] bg-white/80 rounded-xl p-4 md:p-6 border-4 border-gray-400 shadow-inner flex justify-center items-center">
+    <p
+      className={`text-gray-900 text-2xl md:text-3xl font-bold text-center leading-snug transition-all duration-700 ${
+        isSpinning ? "opacity-0 scale-90" : "opacity-100 scale-100"
+      }`}
+    >
+      {selectedQuestion || "?"}
+    </p>
+  </div>
+</div>
 
         {/* スタートレバー */}
         <div
