@@ -5,13 +5,18 @@ import { polarToCartesian, describeArc } from "../utils/svgUtils";
 interface RouletteWheelProps {
   segments: Segment[];
   rotation: number;
+  openSettings?: () => void; // ✅ ここを追加！（Step2）
 }
 
 /**
  * 🎯 RouletteWheel コンポーネント
  * SVGでルーレット盤面を描画
  */
-const RouletteWheel: React.FC<RouletteWheelProps> = ({ segments, rotation }) => {
+const RouletteWheel: React.FC<RouletteWheelProps> = ({
+  segments,
+  rotation,
+  openSettings, // ✅ 追加（受け取る）
+}) => {
   const size = 500;
   const center = size / 2;
   const radius = size / 2 - 10;
@@ -19,6 +24,16 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({ segments, rotation }) => 
 
   return (
     <div className="relative w-full max-w-[500px] aspect-square roulette-wheel">
+      {/* ⚙ 設定ボタン（ルーレット右上） */}
+      {openSettings && (
+        <button
+          onClick={openSettings}
+          className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-transform hover:scale-105 z-50"
+        >
+          ⚙ 設定
+        </button>
+      )}
+
       {/* 🎨 ルーレット本体 */}
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
         <g

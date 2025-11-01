@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import SegmentControl from "./components/SegmentControl";
 import SpinButton from "./components/SpinButton";
 import SlotMachine from "./slotComponents/SlotMachine";
+import SettingsModal from "./components/SettingsModal"; // ✅ ここだけ直す
 import { useRoulette } from "./hooks/useRoulette";
 
 const App: React.FC = () => {
@@ -22,9 +23,10 @@ const App: React.FC = () => {
   } = useRoulette();
 
   const [isRouletteMode, setIsRouletteMode] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // ✅ 共通管理
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-6 space-y-8 font-sans">
+    <div className="relative min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-6 space-y-8 font-sans">
       <Header />
 
       {/* 🎛 モード切替トグル */}
@@ -47,11 +49,14 @@ const App: React.FC = () => {
         </span>
       </div>
 
-      {/* 🎡 ルーレットモード or 🎰 スロットモード */}
+      {/* 🎡 ルーレット or 🎰 スロット */}
       {isRouletteMode ? (
-        <main className="flex flex-col items-center space-y-8 w-full">
-          <RouletteWheel segments={currentSegments} rotation={rotation} />
-
+        <main className="flex flex-col items-center space-y-8 w-full relative">
+          <RouletteWheel
+            segments={currentSegments}
+            rotation={rotation}
+            openSettings={() => setIsSettingsOpen(true)} // ✅ ルーレット上の設定ボタン
+          />
           <div className="flex flex-col items-center space-y-6 w-full max-w-md">
             <SegmentControl
               numberOfSegments={numberOfSegments}
@@ -67,9 +72,21 @@ const App: React.FC = () => {
           )}
         </main>
       ) : (
-        <main className="flex flex-col items-center justify-center">
+        <main className="flex flex-col items-center justify-center relative">
+          {/* スロット内部の設定ボタンを削除し、ここに統一 */}
           <SlotMachine />
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="absolute top-6 right-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-transform hover:scale-105 z-50"
+          >
+            ⚙ 設定
+          </button>
         </main>
+      )}
+
+      {/* ⚙️ 共通設定モーダル */}
+      {isSettingsOpen && (
+        <SettingsModal onClose={() => setIsSettingsOpen(false)} />
       )}
     </div>
   );
