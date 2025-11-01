@@ -42,3 +42,56 @@ body {
 .animate-rise {
   animation: rise 0.5s ease-out forwards;
 }
+@keyframes slotSpin {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  25% {
+    transform: translateY(-8px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(-6px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slotSpin {
+  animation: slotSpin 0.15s linear infinite;
+}
+@keyframes slotSpin {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  25% {
+    transform: translateY(-8px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(-6px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slotSpin {
+  animation: slotSpin 0.15s linear infinite;
+}
+

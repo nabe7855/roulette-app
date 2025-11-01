@@ -1,62 +1,52 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import Reel from "./Reel";
-import type { Symbol } from "../types";
+import React, { useState, useEffect, useRef } from "react";
 import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../constants";
 
-interface SlotMachineProps {
-  questions: string[];
-  isSpinning: boolean;
-  selectedQuestion: string | null;
-  onStart: () => void;
-  disabled: boolean;
-}
+const SlotMachine: React.FC = () => {
+  const [credits, setCredits] = useState(INITIAL_CREDITS);
+  const [message, setMessage] = useState("Pull the lever for a question!");
+  const [leverPulled, setLeverPulled] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [displayQuestion, setDisplayQuestion] = useState("?");
+  const spinInterval = useRef<NodeJS.Timeout | null>(null);
 
-const SlotMachine: React.FC<SlotMachineProps> = ({
-  questions,
-  isSpinning,
-  selectedQuestion,
-  onStart,
-  disabled,
-}) => {
-  const [reels, setReels] = useState<Symbol[]>([QUESTIONS[0]]);
-  const [credits, setCredits] = useState<number>(INITIAL_CREDITS);
-  const [message, setMessage] = useState<string>("Pull the lever for a question!");
-  const [leverPulled, setLeverPulled] = useState<boolean>(false);
-  const initialRender = useRef(true);
-
-  const checkWin = useCallback(() => {
-    if (credits - SPIN_COST <= 0) {
-      setMessage("Game Over! Refresh to play again.");
-      setCredits(0);
-    } else {
-      setMessage(selectedQuestion ? selectedQuestion : "Here is your question!");
-    }
-  }, [credits, selectedQuestion]);
-
+  // 🎯 スピン終了後のチェック
   useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-      return;
-    }
-    if (!isSpinning) {
-      checkWin();
-    }
-  }, [isSpinning, checkWin]);
+    if (isSpinning) {
+      // ランダムで質問を高速切り替え
+      spinInterval.current = setInterval(() => {
+        const randomQ = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+        setDisplayQuestion(randomQ);
+      }, 100);
 
+      // 2秒後に停止
+      setTimeout(() => {
+        if (spinInterval.current) clearInterval(spinInterval.current);
+        const finalQ = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+        setDisplayQuestion(finalQ);
+        setIsSpinning(false);
+        setMessage(finalQ);
+      }, 2000);
+    }
+
+    return () => {
+      if (spinInterval.current) clearInterval(spinInterval.current);
+    };
+  }, [isSpinning]);
+
+  // 🎰 スピン開始
   const handleSpin = () => {
-    if (isSpinning || disabled) return;
+    if (isSpinning || credits <= 0) return;
+
     setLeverPulled(true);
-    onStart();
+    setIsSpinning(true);
+    setCredits((prev) => prev - SPIN_COST);
+    setMessage("Spinning...");
     setTimeout(() => setLeverPulled(false), 500);
   };
 
   return (
-    <div className="relative min-h-[600px] flex flex-col items-center justify-center p-4 font-sans">
-      {/* 💰 残高・メッセージ */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white p-4 rounded-lg text-center z-50">
-        <div className="text-yellow-400 text-2xl font-bold mb-1">Credits: {credits}</div>
-        <div className="text-lg h-6">{message}</div>
-      </div>
+    <div className="relative min-h-[600px] flex flex-col items-center justify-center p-4 font-sans bg-[#0f172a]">
+    
 
       {/* 🎰 スロット筐体 */}
       <div className="relative mt-24 w-[320px] h-[550px] md:w-[400px] md:h-[650px] bg-red-700 rounded-3xl border-4 border-red-900 shadow-2xl p-4 flex flex-col items-center justify-center">
@@ -65,20 +55,25 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           <span className="text-red-800 text-3xl md:text-4xl font-extrabold">SLOT</span>
         </div>
 
-       {/* 🎡 質問表示ウィンドウ（パターン③・拡張版） */}
-<div className="absolute inset-0 flex justify-center items-center">
-  <div className="w-[92%] h-[130px] md:h-[160px] bg-white/80 rounded-xl p-4 md:p-6 border-4 border-gray-400 shadow-inner flex justify-center items-center">
-    <p
-      className={`text-gray-900 text-2xl md:text-3xl font-bold text-center leading-snug transition-all duration-700 ${
-        isSpinning ? "opacity-0 scale-90" : "opacity-100 scale-100"
-      }`}
-    >
-      {selectedQuestion || "?"}
-    </p>
-  </div>
-</div>
+        {/* 🎡 質問表示ウィンドウ */}
+        <div className="absolute inset-0 flex justify-center items-center">
+          <div className="w-[92%] h-[130px] md:h-[160px] bg-white/80 rounded-xl p-4 md:p-6 border-4 border-gray-400 shadow-inner flex justify-center items-center overflow-hidden">
+            <p
+              className={`text-gray-900 text-2xl md:text-3xl font-bold text-center leading-snug transition-transform duration-100 ${
+                isSpinning ? "animate-slotSpin" : ""
+              }`}
+            >
+              {displayQuestion}
+            </p>
+          </div>
+        </div>
 
-        {/* スタートレバー */}
+        {/* 🪙 コイン投入口 */}
+        <div className="absolute bottom-6 w-24 h-6 bg-gray-700 rounded-md border-2 border-gray-900 shadow-inner flex justify-center items-center">
+          <div className="w-16 h-1.5 bg-gray-900 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]"></div>
+        </div>
+
+        {/* 🎯 スタートレバー */}
         <div
           className="absolute top-1/2 -translate-y-1/2 right-[-60px] md:right-[-80px] w-10 md:w-12 h-48 md:h-56 flex flex-col items-center cursor-pointer group"
           onClick={handleSpin}

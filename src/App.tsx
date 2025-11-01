@@ -27,7 +27,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-6 space-y-8 font-sans">
       <Header />
 
-      {/* モード切替トグル */}
+      {/* 🎛 モード切替トグル */}
       <div className="flex items-center gap-3 mb-4">
         <span className={isRouletteMode ? "text-pink-400" : "text-gray-500"}>
           🎡 ルーレット
@@ -47,6 +47,7 @@ const App: React.FC = () => {
         </span>
       </div>
 
+      {/* 🎡 ルーレットモード or 🎰 スロットモード */}
       {isRouletteMode ? (
         <main className="flex flex-col items-center space-y-8 w-full">
           <RouletteWheel segments={currentSegments} rotation={rotation} />
@@ -60,27 +61,14 @@ const App: React.FC = () => {
             <SpinButton onSpin={handleSpin} isSpinning={isSpinning} />
           </div>
 
-          {/* ✅ モーダル表示条件 */}
+          {/* ✅ モーダル表示 */}
           {winner && isModalOpen && (
             <WinnerModal winner={winner} onClose={handleCloseModal} />
           )}
         </main>
       ) : (
-        <main className="flex flex-col items-center space-y-8 w-full">
-          <SlotMachine
-            questions={[
-              "好きな食べ物は？🍝",
-              "最近ハマってることは？🎧",
-              "子どもの頃の夢は？🌈",
-              "休日の過ごし方は？☕",
-              "よく使う口癖は？💬",
-              "今の気分を一言で？🌟",
-            ]}
-            isSpinning={false}
-            selectedQuestion={null}
-            onStart={() => console.log("スロット開始！")}
-            disabled={false}
-          />
+        <main className="flex flex-col items-center justify-center">
+          <SlotMachine />
         </main>
       )}
     </div>
