@@ -1,12 +1,34 @@
 import React, { useState, useEffect, useRef } from "react";
 import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../constants";
 
+/* 🎉 結果発表モーダル（フェードイン付き） */
+const WinnerModal: React.FC<{ question: string; onClose: () => void }> = ({
+  question,
+  onClose,
+}) => (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 animate-fadeIn">
+    <div className="bg-white text-gray-900 rounded-2xl shadow-2xl w-[85%] max-w-md p-6 text-center border-4 border-pink-500 animate-fadeIn">
+      <h2 className="text-3xl font-bold text-pink-600 mb-4 animate-bounce">
+        🎉 結果発表 🎉
+      </h2>
+      <p className="text-2xl font-semibold mb-6 leading-snug">{question}</p>
+      <button
+        onClick={onClose}
+        className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-lg font-bold transition-transform hover:scale-105 shadow-md"
+      >
+        OK 💫
+      </button>
+    </div>
+  </div>
+);
+
 const SlotMachine: React.FC = () => {
   const [credits, setCredits] = useState(INITIAL_CREDITS);
   const [message, setMessage] = useState("Pull the lever for a question!");
   const [leverPulled, setLeverPulled] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [displayQuestion, setDisplayQuestion] = useState("?");
+  const [isModalOpen, setIsModalOpen] = useState(false); // ✅ モーダルの状態
   const spinInterval = useRef<NodeJS.Timeout | null>(null);
 
   // 🎯 スピン終了後のチェック
@@ -25,6 +47,7 @@ const SlotMachine: React.FC = () => {
         setDisplayQuestion(finalQ);
         setIsSpinning(false);
         setMessage(finalQ);
+        setIsModalOpen(true); // ✅ モーダルを表示
       }, 2000);
     }
 
@@ -46,13 +69,13 @@ const SlotMachine: React.FC = () => {
 
   return (
     <div className="relative min-h-[600px] flex flex-col items-center justify-center p-4 font-sans bg-[#0f172a]">
-    
-
       {/* 🎰 スロット筐体 */}
       <div className="relative mt-24 w-[320px] h-[550px] md:w-[400px] md:h-[650px] bg-red-700 rounded-3xl border-4 border-red-900 shadow-2xl p-4 flex flex-col items-center justify-center">
         {/* 上部パネル */}
         <div className="absolute top-6 w-[80%] h-12 bg-yellow-400 border-4 border-yellow-600 flex items-center justify-center rounded-lg shadow-inner">
-          <span className="text-red-800 text-3xl md:text-4xl font-extrabold">SLOT</span>
+          <span className="text-red-800 text-3xl md:text-4xl font-extrabold">
+            SLOT
+          </span>
         </div>
 
         {/* 🎡 質問表示ウィンドウ */}
@@ -90,6 +113,14 @@ const SlotMachine: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* ✅ 結果発表モーダル */}
+      {isModalOpen && (
+        <WinnerModal
+          question={displayQuestion}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
