@@ -6,11 +6,9 @@ import { Settings as SettingsIcon } from "lucide-react";
 
 import { AppMode } from "../types";
 import { DEFAULT_QUESTIONS } from "../constants";
-
-import { useRoulette } from "../hooks/useRoulette";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
-import ToggleSwitch from "../components/ToggleSwitch";
+import ToggleSwitch from "../slotComponents/ToggleSwitch";
 import RouletteWheel from "../components/RouletteWheel";
 import SlotMachine from "../slotComponents/SlotMachine";
 import WinnerModal from "../components/WinnerModal";
@@ -25,17 +23,12 @@ export default function Page() {
   const [questions] = useLocalStorage<string[]>("questions", DEFAULT_QUESTIONS);
   const [askedIndexes, setAskedIndexes] = useLocalStorage<number[]>("asked-indexes", []);
 
-  // 🌸 共通状態
+  // 共通状態
   const [isSpinning, setIsSpinning] = useState(false);
   const [displayQuestions, setDisplayQuestions] = useState<string[]>([]);
-  const [targetQuestion, setTargetQuestion] = useState<string | null>(null);
-
-  // 🎡 ルーレット用
   const [rouletteSelectedQuestion, setRouletteSelectedQuestion] = useState<string | null>(null);
-  const [isRouletteResultOpen, setIsRouletteResultOpen] = useState(false);
-
-  // 🎰 スロット用
   const [slotSelectedQuestion, setSlotSelectedQuestion] = useState<string | null>(null);
+  const [isRouletteResultOpen, setIsRouletteResultOpen] = useState(false);
   const [isSlotResultOpen, setIsSlotResultOpen] = useState(false);
 
   // 有効な質問を取得
@@ -56,11 +49,9 @@ export default function Page() {
     }
 
     setIsSpinning(true);
-
-    // 結果を決定
     const finalPick = available[Math.floor(Math.random() * available.length)];
 
-    // 表示するリストを作成
+    // 表示用リスト
     const others = available
       .filter((q) => q.question !== finalPick.question)
       .map((q) => q.question)
@@ -71,12 +62,7 @@ export default function Page() {
       .sort(() => Math.random() - 0.5)
       .slice(0, 10);
 
-    if (!finalDisplayQuestions.includes(finalPick.question)) {
-      finalDisplayQuestions.push(finalPick.question);
-    }
-
     setDisplayQuestions(finalDisplayQuestions);
-    setTimeout(() => setTargetQuestion(finalPick.question), 50);
 
     setTimeout(() => {
       const resultQuestion = finalPick.question;
@@ -92,7 +78,7 @@ export default function Page() {
 
       setAskedIndexes((prev) => [...prev, resultIndex]);
       setIsSpinning(false);
-    }, 5000);
+    }, 6000); // ルーレット回転時間に合わせる
   };
 
   // 履歴リセット
@@ -100,29 +86,15 @@ export default function Page() {
     setAskedIndexes([]);
     setRouletteSelectedQuestion(null);
     setSlotSelectedQuestion(null);
-    setTargetQuestion(null);
     alert("履歴をクリアしました！");
   };
 
   // モード切替
   const handleToggleMode = useCallback(() => {
-    setMode((prev) =>
-      prev === AppMode.Roulette ? AppMode.Slot : AppMode.Roulette
-    );
+    setMode((prev) => (prev === AppMode.Roulette ? AppMode.Slot : AppMode.Roulette));
   }, [setMode]);
 
-  // モード変更時に状態をリセット
-  useEffect(() => {
-    if (mode === AppMode.Roulette) {
-      setSlotSelectedQuestion(null);
-      setIsSlotResultOpen(false);
-    } else {
-      setRouletteSelectedQuestion(null);
-      setIsRouletteResultOpen(false);
-    }
-  }, [mode]);
-
-  // 初期の表示リスト
+  // 初期の質問リスト
   useEffect(() => {
     const available = getAvailableQuestions();
     const initialDisplay = available
@@ -135,15 +107,14 @@ export default function Page() {
   const availableCount = getAvailableQuestions().length;
   const totalCount = questions.length;
 
-  // 🎨 UI
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-800 flex flex-col items-center justify-center p-4 font-sans relative">
+    <div className="min-h-screen bg-gradient-to-b from-pink-100 via-white to-pink-200 text-gray-800 flex flex-col items-center justify-center p-4 font-sans relative">
       {/* ⚙ 設定ボタン */}
       <div className="absolute top-4 right-4">
         <button
           onClick={() => router.push("/admin")}
           disabled={isSpinning}
-          className="text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-gray-500 hover:text-pink-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <SettingsIcon className="w-8 h-8" />
         </button>
@@ -151,24 +122,28 @@ export default function Page() {
 
       {/* タイトル */}
       <header className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-800">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-pink-600 drop-shadow-[1px_2px_0_rgba(255,255,255,0.9)]">
           質問{mode === AppMode.Roulette ? "ルーレット" : "スロット"}
         </h1>
-        <p className="text-gray-500 mt-2">
-          自己PRの練習や会話のきっかけ作りに！
-        </p>
+        <p className="text-gray-600 mt-2 text-lg">自己PRの練習や会話のきっかけ作りに！</p>
       </header>
 
-      {/* メインコンテンツ */}
+      {/* メイン */}
       <main className="flex-grow flex flex-col items-center justify-center w-full">
         {mode === AppMode.Roulette ? (
-         <RouletteWheel
-  segments={displayQuestions.map((q) => ({
-    label: q,
-    color: "#4ade80", // 💚お好みで色を変えてもOK！
-  }))}
-  rotation={isSpinning ? 360 : 0}
-/>
+          <RouletteWheel
+            segments={displayQuestions.map((q) => ({
+              label: q,
+              color: "#f48fb1", // 💗 ピンクトーンのルーレット
+            }))}
+            isSpinning={isSpinning}
+            rotation={isSpinning ? 360 : 0}
+            onFinished={(winner) => {
+              setRouletteSelectedQuestion(winner.label);
+              setIsRouletteResultOpen(true);
+              setIsSpinning(false);
+            }}
+          />
         ) : (
           <SlotMachine
             questions={questions}
@@ -189,36 +164,38 @@ export default function Page() {
           <button
             onClick={handleStart}
             disabled={isSpinning || availableCount === 0}
-            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-500/30"
+            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-pink-400/40 disabled:bg-gray-400"
           >
-            {isSpinning ? "回転中..." : "スタート"}
+            {isSpinning ? "回転中..." : "スタート🎡"}
           </button>
           <button
             onClick={handleClear}
             disabled={isSpinning}
-            className="w-full bg-gray-300 hover:bg-gray-400 disabled:opacity-50 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg transition-colors"
+            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg transition-colors disabled:opacity-50"
           >
             履歴をクリア
           </button>
         </div>
-        <p className="text-center mt-4 text-gray-500 font-medium">
+        <p className="text-center mt-4 text-gray-600 font-medium">
           残り {availableCount} / {totalCount} 問
         </p>
       </footer>
 
-      {/* ✅ モーダル */}
+      {/* 🎀 モーダル */}
       {mode === AppMode.Roulette ? (
-        <WinnerModal
-          isOpen={isRouletteResultOpen}
-          question={rouletteSelectedQuestion}
-          onClose={() => setIsRouletteResultOpen(false)}
-        />
+        isRouletteResultOpen && (
+          <WinnerModal
+            winner={{ label: rouletteSelectedQuestion ?? "" }}
+            onClose={() => setIsRouletteResultOpen(false)}
+          />
+        )
       ) : (
-        <WinnerModal
-          isOpen={isSlotResultOpen}
-          question={slotSelectedQuestion}
-          onClose={() => setIsSlotResultOpen(false)}
-        />
+        isSlotResultOpen && (
+          <WinnerModal
+            winner={{ label: slotSelectedQuestion ?? "" }}
+            onClose={() => setIsSlotResultOpen(false)}
+          />
+        )
       )}
     </div>
   );

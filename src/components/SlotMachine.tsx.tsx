@@ -1,137 +1,191 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import Reel from "../slotComponents/Reel";
-import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../constants";
 
-/* 💬 上部インフォパネル */
-const InfoPanel: React.FC<{ credits: number; message: string }> = ({ credits, message }) => (
-  <div className="absolute top-4 left-1/2 -translate-x-1/2 w-11/12 md:w-auto bg-black/50 text-white p-4 rounded-lg shadow-lg text-center backdrop-blur-sm z-50">
-    <div className="text-yellow-400 text-2xl font-bold mb-1">Credits: {credits}</div>
-    <div className="text-lg h-6">{message}</div>
+import React, { useState, useEffect, useRef } from "react";
+import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../constants";
+import AdminPanel from "../admin/components/AdminDashboard";
+
+/* ================================
+ 🎀 WinnerModal（結果発表モーダル）
+================================ */
+type WinnerModalProps = {
+  question: string;
+  onClose: () => void;
+};
+
+const WinnerModal: React.FC<WinnerModalProps> = ({ question, onClose }) => (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 animate-fadeIn">
+    <div className="bg-white text-gray-900 rounded-2xl shadow-2xl w-[85%] max-w-md p-6 text-center border-4 border-pink-400 animate-fadeIn">
+      <h2 className="text-3xl font-bold text-pink-500 mb-4 animate-bounce">
+        🎀 結果発表 🎀
+      </h2>
+      <p className="text-2xl font-semibold mb-6 leading-snug">{question}</p>
+      <button
+        onClick={onClose}
+        className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-lg font-bold transition-transform hover:scale-105 shadow-md"
+      >
+        OK 💫
+      </button>
+    </div>
   </div>
 );
 
-/* 🪙 コインの描画 */
-const Coin: React.FC = () => (
-  <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-gray-200 to-gray-400 rounded-full shadow-md border-2 border-gray-500" />
+/* ================================
+ ⚙️ SettingsModal（設定モーダル）
+================================ */
+type SettingsModalProps = {
+  onClose: () => void;
+};
+
+const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 animate-fadeIn">
+    <div className="bg-white text-gray-900 rounded-2xl shadow-2xl w-[95%] max-w-3xl p-6 border-4 border-pink-400 overflow-y-auto max-h-[90vh]">
+      <h2 className="text-2xl font-bold text-pink-600 mb-4 text-center">
+        ⚙️ 管理画面設定
+      </h2>
+      <AdminPanel onLogout={() => console.log("ログアウトしました")} />
+      <div className="text-center mt-6">
+        <button
+          onClick={onClose}
+          className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-lg font-bold transition-transform hover:scale-105 shadow-md"
+        >
+          閉じる ✖
+        </button>
+      </div>
+    </div>
+  </div>
 );
 
-/* 🎰 スロットマシン本体 */
+/* ================================
+ 🎰 SlotMachine（本体）
+================================ */
 const SlotMachine: React.FC = () => {
-  const [reels, setReels] = useState<string[]>([QUESTIONS[0]]);
-  const [spinning, setSpinning] = useState(false);
   const [credits, setCredits] = useState(INITIAL_CREDITS);
   const [message, setMessage] = useState("Pull the lever for a question!");
   const [leverPulled, setLeverPulled] = useState(false);
-  const initialRender = useRef(true);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [displayQuestion, setDisplayQuestion] = useState("?");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const spinInterval = useRef<NodeJS.Timeout | null>(null);
 
-  /* 🧩 結果チェック */
-  const checkWin = useCallback(() => {
-    if (credits - SPIN_COST <= 0) {
-      setMessage("Game Over! Refresh to play again.");
-      setCredits(0);
-    } else {
-      setMessage("Here is your question!");
-    }
-  }, [credits]);
-
+  // スロットのスピン処理
   useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-      return;
-    }
-    if (!spinning) checkWin();
-  }, [spinning, checkWin]);
+    if (isSpinning) {
+      spinInterval.current = setInterval(() => {
+        const randomQ = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+        setDisplayQuestion(randomQ);
+      }, 100);
 
-  /* 🎯 スピン処理 */
+      setTimeout(() => {
+        if (spinInterval.current) clearInterval(spinInterval.current);
+        const finalQ = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+        setDisplayQuestion(finalQ);
+        setIsSpinning(false);
+        setMessage(finalQ);
+        setIsModalOpen(true);
+      }, 2000);
+    }
+
+    return () => {
+      if (spinInterval.current) clearInterval(spinInterval.current);
+    };
+  }, [isSpinning]);
+
   const handleSpin = () => {
-    if (spinning || credits < SPIN_COST) {
-      if (credits < SPIN_COST) setMessage("Not enough credits!");
-      return;
-    }
-
-    setSpinning(true);
+    if (isSpinning || credits <= 0) return;
     setLeverPulled(true);
-    setCredits((c) => c - SPIN_COST);
-    setMessage("Thinking of a question...");
-
-    const newReels = reels.map(
-      () => QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)]
-    );
-
-    setTimeout(() => setReels(newReels), 500);
-    setTimeout(() => setSpinning(false), 2000);
+    setIsSpinning(true);
+    setCredits((prev) => prev - SPIN_COST);
+    setMessage("Spinning...");
     setTimeout(() => setLeverPulled(false), 500);
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden font-sans bg-[#0f172a]">
-      <InfoPanel credits={credits} message={message} />
+    <div className="relative min-h-[600px] flex flex-col items-center justify-center p-4 font-sans bg-[#1a1c2b]">
+      {/* ⚙️ 設定ボタン */}
+      <button
+        onClick={() => setIsSettingsOpen(true)}
+        className="absolute top-6 right-6 bg-pink-500 hover:bg-pink-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-transform hover:scale-105 z-50"
+      >
+        ⚙ 設定
+      </button>
 
       {/* 🎰 スロット筐体 */}
-      <div className="relative mt-24 md:mt-0">
-        {/* ✅ justify-between → justify-center に修正 */}
-        <div className="relative w-[320px] h-[550px] md:w-[400px] md:h-[650px] bg-red-700 rounded-3xl border-4 border-red-900 shadow-2xl p-4 flex flex-col items-center justify-center z-10">
+      <div
+        className="relative mt-24 w-[320px] h-[550px] md:w-[400px] md:h-[650px] 
+        rounded-3xl border-4 border-[#b40000] shadow-[0_8px_0_#5c0000]
+        flex flex-col items-center justify-center"
+        style={{
+          background:
+            "linear-gradient(180deg, #ff6b6b 0%, #d93a3a 40%, #9c1c1c 100%)",
+        }}
+      >
+        {/* 上部タイトル */}
+        <div className="absolute top-6 w-[80%] h-14 bg-gradient-to-b from-yellow-200 to-yellow-500 border-[3px] border-yellow-700 flex items-center justify-center rounded-lg shadow-[inset_0_2px_4px_rgba(255,255,255,0.6)]">
+          <span className="text-red-700 text-3xl md:text-4xl font-extrabold drop-shadow-[1px_2px_0_rgba(255,255,255,0.7)] tracking-widest">
+            SLOT
+          </span>
+        </div>
 
-          {/* 上部タイトルパネル */}
-          <div className="absolute top-6 w-[80%] h-12 bg-red-500 border-4 border-red-700 flex items-center justify-center">
-            <span className="text-yellow-300 text-4xl font-extrabold tracking-widest" style={{ textShadow: "2px 2px 0px #9A3412" }}>
-              SLOT
-            </span>
-          </div>
-
-          {/* 🎡 質問表示ウィンドウ（完全中央） */}
-          <div className="absolute inset-0 flex justify-center items-center">
-            <div className="w-[85%] bg-gray-600/50 rounded-lg p-2 md:p-4 border-4 border-gray-400 shadow-inner flex justify-center items-center">
-              <p
-                className={`text-white text-2xl md:text-3xl font-bold text-center transition-all duration-700 ${
-                  spinning ? "opacity-0 scale-90" : "opacity-100 scale-100"
-                }`}
-              >
-                {reels[0] || "?"}
-              </p>
-            </div>
-          </div>
-
-          {/* 下部操作パネル */}
-          <div className="absolute bottom-0 w-full h-16 bg-yellow-400 rounded-b-3xl border-t-4 border-yellow-600 shadow-inner flex items-center justify-between px-6">
-            <div className="w-10 h-10 bg-red-600 rounded-full border-4 border-red-800 shadow-md"></div>
-            <div className="flex gap-4">
-              <div className="w-4 h-4 bg-yellow-600 rounded-full"></div>
-              <div className="w-4 h-4 bg-yellow-600 rounded-full"></div>
-              <div className="w-4 h-4 bg-yellow-600 rounded-full"></div>
-            </div>
-            <div className="w-12 h-6 bg-gray-400 rounded-sm border-2 border-gray-500 shadow-inner"></div>
-          </div>
-
-          {/* コイントレイ */}
-          <div className="absolute bottom-20 w-full h-24 bg-gray-800 rounded-xl shadow-inner border-4 border-black/50 p-2 flex items-end justify-center">
-            <div className="flex flex-wrap items-center justify-center gap-1 opacity-80">
-              {[...Array(10)].map((_, i) => (
-                <Coin key={i} />
-              ))}
-            </div>
+        {/* 質問ウィンドウ */}
+        <div className="absolute inset-0 flex justify-center items-center">
+          <div className="w-[92%] h-[130px] md:h-[160px] bg-white/85 rounded-xl p-4 border-4 border-pink-200 shadow-[inset_0_4px_6px_rgba(0,0,0,0.1)] flex justify-center items-center overflow-hidden">
+            <p
+              className={`text-gray-800 text-2xl md:text-3xl font-bold text-center leading-snug transition-transform duration-100 ${
+                isSpinning ? "animate-slotSpin" : ""
+              }`}
+            >
+              {displayQuestion}
+            </p>
           </div>
         </div>
 
-        {/* 🎯 レバー */}
+        {/* コイン投入口 */}
+        <div className="absolute bottom-24 w-24 h-6 bg-gray-600 rounded-md border-2 border-gray-900 shadow-inner flex justify-center items-center">
+          <div className="w-16 h-1.5 bg-gray-900 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]"></div>
+        </div>
+
+        {/* コイン山盛り部分 */}
+        <div className="absolute bottom-4 w-[200px] h-[70px] bg-gradient-to-b from-gray-300 to-gray-600 rounded-2xl border-2 border-gray-700 shadow-inner flex flex-wrap justify-center items-end gap-[3px] p-[4px] overflow-hidden">
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              className="w-[10px] h-[10px] rounded-full bg-gradient-to-t from-gray-500 to-white shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]"
+            />
+          ))}
+          <div className="absolute bottom-0 w-full h-[6px] bg-white/30 blur-sm"></div>
+        </div>
+
+        {/* レバー */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 right-[-60px] md:right-[-80px] w-10 md:w-12 h-48 md:h-56 flex flex-col items-center z-0 cursor-pointer group"
+          className="absolute top-1/2 -translate-y-1/2 right-[-70px] w-12 h-48 flex flex-col items-center cursor-pointer group drop-shadow-[2px_4px_6px_rgba(0,0,0,0.3)]"
           onClick={handleSpin}
         >
+          <div className="w-3 h-24 bg-gray-700 rounded-full shadow-inner"></div>
           <div
-            className={`w-14 h-14 md:w-16 md:h-16 bg-red-600 rounded-full border-4 border-red-800 shadow-lg absolute -top-1 transition-transform duration-300 ease-in-out ${
+            className={`w-14 h-14 bg-gradient-to-b from-red-400 to-red-700 rounded-full border-4 border-red-800 shadow-lg absolute -top-1 transition-transform duration-300 ${
               leverPulled ? "translate-y-20" : "group-hover:scale-110"
             }`}
-          ></div>
-          <div
-            className={`w-full h-full bg-gray-400 border-4 border-gray-500 rounded-lg transition-transform duration-300 ease-in-out origin-top-left ${
-              leverPulled ? "rotate-45" : "group-hover:rotate-12"
-            }`}
-          ></div>
-          <div className="absolute top-0 left-[-30px] md:left-[-40px] w-10 h-24 md:w-12 md:h-28 bg-yellow-500 rounded-lg border-4 border-yellow-600 -z-10"></div>
+          />
         </div>
+
+        {isSpinning && (
+          <div className="absolute inset-0 bg-pink-200/20 animate-pulse rounded-3xl pointer-events-none"></div>
+        )}
       </div>
+
+      {/* ✅ 結果発表モーダル */}
+      {isModalOpen && (
+        <WinnerModal
+          question={displayQuestion}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+
+      {/* ⚙️ 設定モーダル */}
+      {isSettingsOpen && (
+        <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+      )}
     </div>
   );
 };
