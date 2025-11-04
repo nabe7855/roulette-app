@@ -2,18 +2,16 @@
 import React, { useEffect } from "react";
 import { Segment } from "../types";
 
-/** 🧩 Props定義
- * どちらの呼び出し方（ルーレット or スロット）でも使えるように統一！
- */
+/** 🧩 Props定義 */
 interface WinnerModalProps {
-  isOpen?: boolean;        // モーダルを開くフラグ（スロット用など）
-  winner?: Segment | null; // ルーレット結果（Segment型）
-  question?: string;       // スロット結果（文字列）
-  onClose: () => void;     // モーダルを閉じる処理
+  isOpen?: boolean;
+  winner?: Segment | null;
+  question?: string;
+  onClose: () => void;
 }
 
 const WinnerModal: React.FC<WinnerModalProps> = ({
-  isOpen = true, // デフォルトtrueにしておく
+  isOpen = true,
   winner,
   question,
   onClose,
@@ -27,47 +25,74 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  // 表示条件チェック
   if (!isOpen || (!winner && !question)) return null;
 
-  // 表示するテキストを動的に切り替え
   const displayText = winner
     ? `${winner.label} が当たりました！`
     : `${question}`;
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[999999]"
+      style={{
+        position: "fixed",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(4px)",
+        zIndex: 999999,
+      }}
       onClick={onClose}
       aria-modal="true"
       role="dialog"
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md text-center relative transform animate-scale-in"
+        className="rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md text-center relative animate-fadeIn"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "linear-gradient(135deg, #a5f3fc, #38bdf8)",
+          boxShadow: "0 0 30px rgba(56,189,248,0.4)",
+          color: "#0c4a6e",
+          zIndex: 1000000,
+        }}
       >
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
-          🎯 結果発表 🎯
+        <h2
+          className="text-3xl font-bold mb-4"
+          style={{ color: "#075985", textShadow: "0 1px 2px rgba(255,255,255,0.7)" }}
+        >
+          💎 結果発表 💎
         </h2>
 
-        <p className="text-lg sm:text-xl text-gray-700 mb-6 break-words leading-relaxed">
-          <span className="font-semibold text-emerald-600">{displayText}</span>
+        <p className="text-lg sm:text-xl mb-6 leading-relaxed break-words font-semibold">
+          {displayText}
         </p>
 
         <button
           onClick={onClose}
-          className="mt-2 w-full bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold py-3 rounded-lg text-lg shadow-lg hover:from-pink-600 hover:to-rose-700 focus:outline-none focus:ring-4 focus:ring-pink-300 transition-all duration-300 transform hover:scale-105"
+          className="mt-2 w-full text-white font-bold py-3 rounded-lg text-lg shadow-lg focus:outline-none transition-all duration-300 transform hover:scale-105"
+          style={{
+            background: "linear-gradient(90deg, #0ea5e9, #38bdf8)",
+            boxShadow: "0 4px 10px rgba(14,165,233,0.4)",
+          }}
         >
           閉じる ✖
         </button>
 
         <style>{`
-          @keyframes scale-in {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: scale(0.9);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
           }
-          .animate-scale-in {
-            animation: scale-in 0.3s ease-out forwards;
+          .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
           }
         `}</style>
       </div>

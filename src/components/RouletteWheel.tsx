@@ -13,10 +13,12 @@ interface RouletteWheelProps {
 
 const RouletteWheel: React.FC<RouletteWheelProps> = ({
   segments,
+  rotation,
   isSpinning = false,
   onFinished,
   openSettings,
 }) => {
+
   const [size, setSize] = useState(400);
 
   useEffect(() => {
@@ -35,25 +37,15 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
   const segmentAngle = 360 / segments.length;
   const [currentRotation, setCurrentRotation] = useState(0);
 
-  useEffect(() => {
-    if (isSpinning) {
-      const randomSpins = 5 + Math.random() * 3;
-      const finalRotation = 360 * randomSpins + Math.random() * 360;
+useEffect(() => {
+  // rotation が変わった時にだけ発火
+  if (rotation !== 0) {
+    requestAnimationFrame(() => setCurrentRotation(rotation));
+  }
+}, [rotation]);
 
-      setTimeout(() => setCurrentRotation(finalRotation), 0);
 
-      const timeout = setTimeout(() => {
-        const winningAngle = finalRotation % 360;
-        const winnerIndex = Math.floor(
-          (segments.length - winningAngle / segmentAngle) % segments.length
-        );
-        const winner = segments[winnerIndex];
-        onFinished?.(winner);
-      }, 6000);
 
-      return () => clearTimeout(timeout);
-    }
-  }, [isSpinning, segments, segmentAngle, onFinished]);
 
   return (
     <div className={styles.rouletteWrapper} style={{ width: `${size}px` }}>
