@@ -82,7 +82,9 @@ const Page: React.FC = () => {
       ) : (
        <main className={styles.main}>
   <SlotMachine
-    questions={["質問1", "質問2", "質問3"]}  // ← 仮のデータ（後で本物に差し替える）
+    questions={["好きな食べ物は？",
+    "最近ハマってることは？",
+    "子どもの頃の夢は？"]}  // ← 仮のデータ（後で本物に差し替える）
     isSpinning={isSpinning}
     selectedQuestion={winner ? winner.label : ""}
     onStart={handleSpin}
