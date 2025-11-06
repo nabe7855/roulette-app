@@ -2,11 +2,10 @@
 import React from 'react';
 import { SEGMENTS } from "../../../constants";
 
-
 // このコンポーネントに渡されるデータ（props）の形を定義しています。
 interface SegmentControlProps {
   numberOfSegments: number; // 現在のセクション数
-  onNumberOfSegmentsChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // セクション数が変更されたときに呼ばれる関数
+  onNumberOfSegmentsChange: (value: number) => void; // ✅ ← 型を修正！（イベントではなく数値を受け取る）
   isSpinning: boolean; // ルーレットが回転中かどうか
 }
 
@@ -29,7 +28,7 @@ const SegmentControl: React.FC<SegmentControlProps> = ({
         type="number" // 数値のみ入力できるようにします。
         id="segments-count" // labelと紐付けるためのIDです。
         value={numberOfSegments} // 表示する値
-        onChange={onNumberOfSegmentsChange} // 値が変更されたときに実行する関数
+        onChange={(e) => onNumberOfSegmentsChange(Number(e.target.value))} // ✅ ← 型を合わせる
         min="2" // 入力できる最小値
         max={SEGMENTS.length} // 入力できる最大値
         disabled={isSpinning} // isSpinningがtrueの間は、入力欄を操作不可にします。

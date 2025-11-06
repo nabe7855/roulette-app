@@ -52,3 +52,17 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   z-index: 1; /* ✅ 針はルーレットより前面 */
 }
+/* 🎯 赤い下向きの針（ルーレット上端すぐ下に） */
+.pointer {
+  position: absolute;
+  top: calc(50% - 150px); /* ← 前よりさらに10px下げてルーレットに近づけた */
+  left: 50%;
+  transform: translateX(-50%) rotate(0deg);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 22px solid #e11d48; /* ❤️ 赤！ (#e11d48 は鮮やかな赤ピンク系) */
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  z-index: 20;
+}

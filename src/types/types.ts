@@ -11,9 +11,11 @@ export enum AppMode {
 
 // 🎯 ルーレットの1セグメント（区画）情報
 export interface Segment {
-  label: string; // 表示する文字
-  color: string; // 背景色（例: "#FF0000"）
+  id: number; // ✅ number型に変更！
+  label: string;
+  color: string;
 }
+
 
 // 💬 質問（管理画面などで扱うデータ）
 export interface Question {

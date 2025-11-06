@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useLayoutEffect } from "react";
 import { Segment } from "../types/types";
-import { SEGMENTS} from "../constants";
+import { SEGMENTS } from "../constants";
 
 /**
  * 🎡 useRouletteフック
@@ -12,9 +12,15 @@ export const useRoulette = () => {
   const [winner, setWinner] = useState<Segment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [numberOfSegments, setNumberOfSegments] = useState<number>(SEGMENTS.length);
-  const [pendingWinnerIndex, setPendingWinnerIndex] = useState<number | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const [_unused, setPendingWinnerIndex] = useState<number | null>(null);
 
-  const currentSegments = SEGMENTS.slice(0, numberOfSegments);
+const currentSegments: Segment[] = SEGMENTS.slice(0, numberOfSegments).map((s, i) => ({
+  id: i,
+  label: s.label,
+  color: s.color,
+}));
+
 
   /** 🎯 スピン開始処理 */
   const handleSpin = useCallback(() => {
@@ -24,34 +30,41 @@ export const useRoulette = () => {
     setWinner(null);
     setIsModalOpen(false);
 
+    // 🎯 当選インデックスを決定
     const winningSegmentIndex = Math.floor(Math.random() * currentSegments.length);
     setPendingWinnerIndex(winningSegmentIndex);
 
+    // 🌀 常に右回転（時計回り）
     const sliceAngle = 360 / currentSegments.length;
     const targetAngle = winningSegmentIndex * sliceAngle + sliceAngle / 2;
-    const randomSpins = 5 + Math.floor(Math.random() * 4);
-    const finalRotation =
-      rotation - (rotation % 360) + randomSpins * 360 + (360 - targetAngle);
+    const randomSpins = 4 + Math.floor(Math.random() * 2); // 4～5回転
+    const newRotation = rotation + randomSpins * 360 + (360 - targetAngle);
 
-    setRotation(finalRotation);
+    setRotation(newRotation);
+
+    // 💫 モーダルを「回転中に予約」
+    setTimeout(() => {
+      const winningSegment = {
+  ...currentSegments[winningSegmentIndex],
+  id: currentSegments[winningSegmentIndex].id ?? winningSegmentIndex, // ← ここ！
+};
+setWinner(winningSegment);
+      setIsModalOpen(true);
+    }, 2200); // transition時間とほぼ同時に表示
   }, [isSpinning, rotation, currentSegments]);
 
-  /** 🌀 回転終了時のモーダル表示（タイマーで制御） */
-  useEffect(() => {
+  /** 🕒 回転終了後の内部状態リセット */
+  useLayoutEffect(() => {
     if (!isSpinning) return;
 
+    const spinDuration = 2500; // transitionに合わせる
     const timer = setTimeout(() => {
-      if (pendingWinnerIndex !== null) {
-        const winningSegment = currentSegments[pendingWinnerIndex];
-        setWinner(winningSegment);
-        setIsModalOpen(true);
-      }
       setIsSpinning(false);
       setPendingWinnerIndex(null);
-    }, 6000); // ← ルーレットのアニメーション時間
+    }, spinDuration);
 
     return () => clearTimeout(timer);
-  }, [isSpinning, currentSegments, pendingWinnerIndex]);
+  }, [isSpinning]);
 
   /** ❌ モーダルを閉じる */
   const handleCloseModal = useCallback(() => {

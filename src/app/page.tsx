@@ -1,30 +1,49 @@
 "use client";
 import React, { useState } from "react";
 import RouletteWheel from "../components/flontend/Rolletecomponents/RouletteWheel";
-import WinnerModal from "../components/flontend/Rolletecomponents/WinnerModal";
 import Header from "../components/flontend/Rolletecomponents/Header";
 import SegmentControl from "../components/flontend/Rolletecomponents/SegmentControl";
+import WinnerModal from "../components/flontend/Rolletecomponents/WinnerModal";
 import SpinButton from "../components/flontend/Rolletecomponents/SpinButton";
 import SlotMachine from "../components/flontend/slotComponents/SlotMachine";
-import { useRoulette } from "../hooks/useRoulette";
-import { useRouter } from "next/navigation"; // ✅ 追加
+import { useRouter } from "next/navigation";
+import { Segment } from "../types/types"; // ✅ 型をimport
 import styles from "./page.module.css";
 
 const Page: React.FC = () => {
-  const {
-    rotation,
-    isSpinning,
-    winner,
-    isModalOpen,
-    numberOfSegments,
-    currentSegments,
-    handleSpin,
-    handleCloseModal,
-    handleNumberOfSegmentsChange,
-  } = useRoulette();
-
   const [isRouletteMode, setIsRouletteMode] = useState(true);
-  const router = useRouter(); // ✅ ページ遷移用
+  const [rotation, setRotation] = useState(0);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [winner, setWinner] = useState<Segment | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [numberOfSegments, setNumberOfSegments] = useState(8);
+
+  const router = useRouter();
+
+  // 🎡 スピン処理
+  const handleSpin = (): void => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    setIsModalOpen(false);
+
+    const randomRotation = 360 * 5 + Math.floor(Math.random() * 360);
+    setRotation(randomRotation);
+
+    setTimeout(() => {
+      setIsSpinning(false);
+    }, 6000);
+  };
+
+  // 🎯 回転完了時（RouletteWheelから結果を受け取る）
+  const handleFinished = (winnerSegment: Segment): void => {
+    setWinner(winnerSegment);
+    setIsModalOpen(true);
+  };
+
+  // ⚙️ セグメント数変更
+  const handleNumberOfSegmentsChange = (value: number): void => {
+    setNumberOfSegments(value);
+  };
 
   return (
     <div className={styles.container}>
@@ -58,14 +77,16 @@ const Page: React.FC = () => {
         </span>
       </div>
 
-      {/* 🎡 ルーレット or 🎰 スロット */}
+      {/* 🎡 ルーレットモード */}
       {isRouletteMode ? (
         <main className={styles.main}>
           <RouletteWheel
-            segments={currentSegments}
             rotation={rotation}
-            openSettings={() => router.push("/admin")} // ✅ ページ遷移に変更！
+            isSpinning={isSpinning}
+            onFinished={handleFinished} // ✅ ここで結果を親へ通知
+            openSettings={() => router.push("/admin")}
           />
+
           <div className={styles.controlArea}>
             <SegmentControl
               numberOfSegments={numberOfSegments}
@@ -75,25 +96,32 @@ const Page: React.FC = () => {
             <SpinButton onSpin={handleSpin} isSpinning={isSpinning} />
           </div>
 
-          {winner && isModalOpen && (
-            <WinnerModal winner={winner} onClose={handleCloseModal} />
-          )}
+         {/* 🎯 結果モーダル */}
+{isModalOpen && winner && (
+  <WinnerModal
+    isOpen={true} // ✅ 明示的に true を渡す（型エラー防止）
+    winner={winner}
+    onClose={() => setIsModalOpen(false)}
+  />
+)}
+
         </main>
       ) : (
+        // 🎰 スロットモード
         <main className={styles.main}>
           <SlotMachine
             questions={[
               "好きな食べ物は？",
               "最近ハマってることは？",
               "子どもの頃の夢は？",
-            ]} // ← 仮のデータ（後で本物に差し替える）
+            ]}
             isSpinning={isSpinning}
             selectedQuestion={winner ? winner.label : ""}
             onStart={handleSpin}
             disabled={isSpinning}
           />
           <button
-            onClick={() => router.push("/admin")} // ✅ こっちもページ遷移に変更！
+            onClick={() => router.push("/admin")}
             className={styles.settingsButton}
           >
             ⚙ 設定
