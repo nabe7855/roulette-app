@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabaseClient";
 import ToggleSwitch from "@/src/components/backend/ToggleSwitch";
@@ -32,11 +32,14 @@ const AdminPage: React.FC = () => {
   // ✏️ 状態管理
   const [newQuestion, setNewQuestion] = useState("");
   const [questions, setQuestions] = useState<DBQuestion[]>([]);
-  const [showUsed, setShowUsed] = useState(false); // ✅ 使用済みタブ切替
+  const [showUsed, setShowUsed] = useState(false);
 
   // ✏️ 編集モード用
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
+
+  // 🚫 二重登録防止フラグ
+  const isSubmittingRef = useRef(false);
 
   const isRoulette = mode === AppMode.Roulette;
 
@@ -52,69 +55,88 @@ const AdminPage: React.FC = () => {
     } else {
       setQuestions(data || []);
     }
-  
   };
 
   useEffect(() => {
-  const load = async () => {
-    await fetchQuestions();
-  };
-  load();
-}, []);
+    fetchQuestions();
+  }, []);
 
-
-  // 💾 質問追加
+  // 💾 質問追加（← ここを修正版）
   const handleAddQuestion = async () => {
     if (!newQuestion.trim()) return;
+    if (isSubmittingRef.current) return; // ← 二重クリック防止
 
-    const newItem: DBQuestion = {
-      id: crypto.randomUUID(),
-      question_text: newQuestion,
-      used: false,
-      type: isRoulette ? "roulette" : "slot",
-    };
+    isSubmittingRef.current = true;
+    const text = newQuestion.trim();
 
-    const localItem: Question = {
-      id: newItem.id,
-      text: newItem.question_text,
-      used: newItem.used,
-    };
+    try {
+      // 🧩 同じ内容の重複チェック
+      const { data: existing, error: checkError } = await supabase
+        .from("questions")
+        .select("id")
+        .eq("question_text", text)
+        .eq("type", isRoulette ? "roulette" : "slot")
+        .limit(1);
 
-    if (isRoulette) {
-      setRouletteQuestions([...rouletteQuestions, localItem]);
-    } else {
-      setSlotQuestions([...slotQuestions, localItem]);
-    }
+      if (checkError) {
+        console.error("❌ 重複チェックエラー:", checkError);
+        alert("確認中にエラーが発生しました。");
+        return;
+      }
 
-    const { error } = await supabase.from("questions").insert([newItem]);
+      if (existing && existing.length > 0) {
+        alert("同じ質問がすでに登録されています⚠️");
+        return;
+      }
 
-    if (error) {
-      console.error("❌ Supabase保存エラー:", error);
-      alert("保存に失敗しました。");
-    } else {
+      const newItem: DBQuestion = {
+        id: crypto.randomUUID(),
+        question_text: text,
+        used: false,
+        type: isRoulette ? "roulette" : "slot",
+      };
+
+      // ✅ Supabaseに登録
+      const { error } = await supabase.from("questions").insert([newItem]);
+      if (error) {
+        console.error("❌ Supabase保存エラー:", error);
+        alert("保存に失敗しました。");
+        return;
+      }
+
       console.log("✅ Supabaseに保存:", newItem.question_text);
       await fetchQuestions();
       setNewQuestion("");
+    } catch (err) {
+      console.error("⚠️ 予期せぬエラー:", err);
+    } finally {
+      // ⏳ 少し遅らせて解除（連打防止）
+      setTimeout(() => {
+        isSubmittingRef.current = false;
+      }, 500);
     }
   };
 
-  // ❌ 質問削除
+  // ❌ 質問削除（修正版：多重呼び出し防止）
   const handleDeleteQuestion = async (id: string, type: "roulette" | "slot") => {
-    const { error } = await supabase.from("questions").delete().eq("id", id);
-    if (error) {
-      console.error("❌ 削除エラー:", error);
-      alert("削除に失敗しました。");
-      return;
-    }
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
-    if (type === "roulette") {
-      setRouletteQuestions(rouletteQuestions.filter((q) => q.id !== id));
-    } else {
-      setSlotQuestions(slotQuestions.filter((q) => q.id !== id));
-    }
+    try {
+      const { error } = await supabase.from("questions").delete().eq("id", id);
+      if (error) {
+        console.error("❌ 削除エラー:", error);
+        alert("削除に失敗しました。");
+        return;
+      }
 
-    console.log("🗑️ 削除完了:", id);
-    await fetchQuestions();
+      console.log("🗑️ 削除完了:", id);
+      await fetchQuestions();
+    } finally {
+      setTimeout(() => {
+        isSubmittingRef.current = false;
+      }, 500);
+    }
   };
 
   // ✏️ 編集開始
@@ -125,33 +147,30 @@ const AdminPage: React.FC = () => {
 
   // 💾 編集保存
   const handleEditSave = async (id: string, type: "roulette" | "slot") => {
-    const { error } = await supabase
-      .from("questions")
-      .update({ question_text: editingText })
-      .eq("id", id);
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
-    if (error) {
-      console.error("❌ 更新エラー:", error);
-      alert("更新に失敗しました。");
-      return;
+    try {
+      const { error } = await supabase
+        .from("questions")
+        .update({ question_text: editingText })
+        .eq("id", id);
+
+      if (error) {
+        console.error("❌ 更新エラー:", error);
+        alert("更新に失敗しました。");
+        return;
+      }
+
+      console.log("✏️ 更新完了:", id);
+      await fetchQuestions();
+      setEditingId(null);
+      setEditingText("");
+    } finally {
+      setTimeout(() => {
+        isSubmittingRef.current = false;
+      }, 500);
     }
-
-    // 🔄 ローカル更新
-    const updateLocal = (list: Question[]) =>
-      list.map((q) =>
-        q.id === id ? { ...q, text: editingText } : q
-      );
-
-    if (type === "roulette") {
-      setRouletteQuestions(updateLocal(rouletteQuestions));
-    } else {
-      setSlotQuestions(updateLocal(slotQuestions));
-    }
-
-    console.log("✏️ 更新完了:", id);
-    setEditingId(null);
-    setEditingText("");
-    await fetchQuestions();
   };
 
   // 💡 Supabase＋ローカル合算
@@ -182,13 +201,7 @@ const AdminPage: React.FC = () => {
           const text = "text" in q ? q.text : q.question_text;
           const isEditing = editingId === q.id;
           return (
-            <li
-              key={q.id}
-              style={{
-                marginBottom: "0.5rem",
-                opacity: showUsed ? 0.6 : 1,
-              }}
-            >
+            <li key={q.id} style={{ marginBottom: "0.5rem", opacity: showUsed ? 0.6 : 1 }}>
               {isEditing ? (
                 <>
                   <input
@@ -283,13 +296,11 @@ const AdminPage: React.FC = () => {
         <ToggleSwitch mode={mode} setMode={setMode} />
 
         {isRoulette ? (
-          // 🎡 ルーレット管理
           <section className="question-manager">
-            <h2>ルーレットの質問管理</h2>
+            <h2>🎡 ルーレットの質問管理</h2>
             <p>登録数: {rouletteCount} / 200</p>
             <p>使用済み: {rouletteUsed}</p>
 
-            {/* 追加フォーム */}
             <div style={{ marginTop: "1rem" }}>
               <input
                 type="text"
@@ -300,7 +311,6 @@ const AdminPage: React.FC = () => {
               <button onClick={handleAddQuestion}>追加</button>
             </div>
 
-            {/* タブ切替 */}
             <div style={{ marginTop: "1.5rem" }}>
               <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
                 <button
@@ -334,9 +344,8 @@ const AdminPage: React.FC = () => {
             </div>
           </section>
         ) : (
-          // 🎰 スロット管理
           <section className="question-manager">
-            <h2>スロットの質問管理</h2>
+            <h2>🎰 スロットの質問管理</h2>
             <p>登録数: {slotCount} / 200</p>
             <p>使用済み: {slotUsed}</p>
 

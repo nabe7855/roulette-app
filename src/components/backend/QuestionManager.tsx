@@ -32,10 +32,31 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({
 
       isSubmittingRef.current = true;
       try {
+        // 🧩 まず同じ内容の質問が既に登録されていないかチェック
+        const { data: existing, error: checkError } = await supabase
+          .from("questions")
+          .select("id")
+          .eq("question_text", text.trim())
+          .eq("type", type)
+          .limit(1);
+
+        if (checkError) {
+          console.error("❌ チェックエラー:", checkError);
+          alert("確認中にエラーが発生しました😢");
+          return;
+        }
+
+        if (existing && existing.length > 0) {
+          console.warn("⚠️ 同じ質問が既に存在します");
+          alert("この質問はすでに登録されています⚠️");
+          return;
+        }
+
+        // ✅ Supabaseに登録
         const { error } = await supabase.from("questions").insert([
           {
             question_text: text.trim(),
-            type: type,
+            type,
             used: false,
           },
         ]);
@@ -46,14 +67,15 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({
           return;
         }
 
-        await fetchQuestions(); // 最新データ取得
+        // 🔄 成功時：リスト再取得
+        await fetchQuestions();
       } catch (err) {
         console.error("⚠️ 予期せぬエラー:", err);
       } finally {
-        // ちょっと遅らせて解除（連打防止）
+        // ⏳ 少し遅らせて解除（クリック連打防止）
         setTimeout(() => {
           isSubmittingRef.current = false;
-        }, 300);
+        }, 400);
       }
     },
     [fetchQuestions, type]

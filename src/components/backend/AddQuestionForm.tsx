@@ -1,39 +1,77 @@
-
-import React, { useState } from 'react';
+"use client";
+import React, { useState, useRef } from "react";
 
 interface AddQuestionFormProps {
-  onAddQuestion: (text: string) => void;
+  onAddQuestion: (text: string) => Promise<void> | void; // ← 非同期もOKに対応
   questionCount: number;
 }
 
-const AddQuestionForm: React.FC<AddQuestionFormProps> = ({ onAddQuestion, questionCount }) => {
-  const [newQuestion, setNewQuestion] = useState('');
+const AddQuestionForm: React.FC<AddQuestionFormProps> = ({
+  onAddQuestion,
+  questionCount,
+}) => {
+  const [newQuestion, setNewQuestion] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // ← 二重送信防止
   const canAdd = questionCount < 200;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 🚫 二重送信ガード
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newQuestion.trim() && canAdd) {
-      onAddQuestion(newQuestion.trim());
-      setNewQuestion('');
+
+    if (isSubmitting) return; // ← ここでガード！
+    if (!newQuestion.trim() || !canAdd) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // await対応で親のSupabase処理が終わるまで待つ
+      await onAddQuestion(newQuestion.trim());
+      setNewQuestion("");
+    } catch (err) {
+      console.error("❌ 質問追加エラー:", err);
+    } finally {
+      // 少し遅らせて解除（連打防止）
+      setTimeout(() => setIsSubmitting(false), 400);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+    <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
       <input
         type="text"
         value={newQuestion}
         onChange={(e) => setNewQuestion(e.target.value)}
-        placeholder={canAdd ? "新しい質問を入力してください..." : "登録上限に達しました"}
-        disabled={!canAdd}
-        className="flex-grow bg-gray-700 border border-gray-600 text-white rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        placeholder={
+          canAdd
+            ? "新しい質問を入力してください..."
+            : "登録上限に達しました"
+        }
+        disabled={!canAdd || isSubmitting}
+        style={{
+          flexGrow: 1,
+          backgroundColor: "#333",
+          border: "1px solid #555",
+          color: "#fff",
+          borderRadius: "6px",
+          padding: "8px 10px",
+          outline: "none",
+        }}
       />
       <button
         type="submit"
-        disabled={!newQuestion.trim() || !canAdd}
-        className="bg-indigo-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed"
+        disabled={!newQuestion.trim() || !canAdd || isSubmitting}
+        style={{
+          backgroundColor: isSubmitting ? "#777" : "#0070f3",
+          color: "#fff",
+          fontWeight: 600,
+          padding: "8px 16px",
+          border: "none",
+          borderRadius: "6px",
+          cursor: isSubmitting ? "not-allowed" : "pointer",
+          transition: "background-color 0.2s",
+        }}
       >
-        追加
+        {isSubmitting ? "追加中..." : "追加"}
       </button>
     </form>
   );
