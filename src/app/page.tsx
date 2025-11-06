@@ -5,7 +5,7 @@ import Header from "../components/flontend/Rolletecomponents/Header";
 import SegmentControl from "../components/flontend/Rolletecomponents/SegmentControl";
 import WinnerModal from "../components/flontend/Rolletecomponents/WinnerModal";
 import SpinButton from "../components/flontend/Rolletecomponents/SpinButton";
-import SlotMachine from "../components/flontend/slotComponents/SlotMachine";
+import SlotMachine from "../components/flontend/slotComponents/NewSlotMachine";
 import { useRouter } from "next/navigation";
 import { Segment } from "../types/types"; // ✅ 型をimport
 import styles from "./page.module.css";
