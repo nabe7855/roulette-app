@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import styles from "./NewSlotMachine.module.css";
 
@@ -10,6 +10,7 @@ type ReelProps = {
   isSpinning: boolean;
   reelIndex: number;
   symbolHeightRem: number;
+  questions: string[]; // ← 追加
 };
 
 type LeverProps = {
@@ -37,13 +38,27 @@ const SymbolDisplay: React.FC<SymbolDisplayProps> = ({
   );
 };
 
+// 🎡 質問がぐるぐる回るリール
 const Reel: React.FC<ReelProps> = React.memo(
-  ({ finalSymbol, isSpinning, symbolHeightRem }) => {
-    const reelSymbols = useMemo(() => [finalSymbol, finalSymbol, finalSymbol], [
-      finalSymbol,
-    ]);
+  ({ finalSymbol, isSpinning, symbolHeightRem, questions }) => {
+    const [reelSymbols, setReelSymbols] = useState<string[]>([finalSymbol]);
 
-    const finalTranslateY = `-${symbolHeightRem}rem`;
+    useEffect(() => {
+      if (isSpinning) {
+        // スピン中は質問をぐるぐる表示
+        const spinInterval = setInterval(() => {
+          setReelSymbols((prev) => {
+            const shuffled = [...questions].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, 5); // ← 表示する数（5個程度）
+          });
+        }, 100); // ← 0.1秒ごとに切り替え（スピード調整可）
+
+        return () => clearInterval(spinInterval);
+      } else {
+        // 停止後は最終結果だけ表示
+        setReelSymbols([finalSymbol]);
+      }
+    }, [isSpinning, finalSymbol, questions]);
 
     return (
       <div
@@ -54,15 +69,13 @@ const Reel: React.FC<ReelProps> = React.memo(
           className={`${styles.reelInner} ${
             isSpinning ? styles.reelSpinning : ""
           }`}
-          style={{
-            transform: isSpinning ? undefined : `translateY(${finalTranslateY})`,
-            transition: isSpinning
-              ? "none"
-              : "transform 2.5s cubic-bezier(0.25, 0.1, 0.25, 1)",
-          }}
         >
           {reelSymbols.map((s, i) => (
-            <SymbolDisplay key={i} symbol={s} symbolHeightRem={symbolHeightRem} />
+            <SymbolDisplay
+              key={i}
+              symbol={s}
+              symbolHeightRem={symbolHeightRem}
+            />
           ))}
         </div>
       </div>
@@ -71,6 +84,7 @@ const Reel: React.FC<ReelProps> = React.memo(
 );
 Reel.displayName = "Reel";
 
+// 🎯 レバー
 const Lever: React.FC<LeverProps> = ({ onSpin, isSpinning }) => {
   const [pulled, setPulled] = useState(false);
 
@@ -122,7 +136,7 @@ export default function NewSlotMachine() {
           (item: { question_text: string }) => item.question_text
         );
         setQuestions(slotQuestions);
-        setReels([slotQuestions[0]]); // 初期表示
+        setReels([slotQuestions[0]]);
       }
     };
     fetchQuestions();
@@ -176,6 +190,7 @@ export default function NewSlotMachine() {
                 finalSymbol={symbol}
                 isSpinning={spinningReels[index]}
                 symbolHeightRem={symbolHeightRem}
+                questions={questions} // ← 追加！
               />
             ))}
           </div>
