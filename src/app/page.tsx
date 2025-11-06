@@ -96,30 +96,19 @@ const Page: React.FC = () => {
             <SpinButton onSpin={handleSpin} isSpinning={isSpinning} />
           </div>
 
-         {/* 🎯 結果モーダル */}
-{isModalOpen && winner && (
-  <WinnerModal
-    isOpen={true} // ✅ 明示的に true を渡す（型エラー防止）
-    winner={winner}
-    onClose={() => setIsModalOpen(false)}
-  />
-)}
-
+          {/* 🎯 結果モーダル */}
+          {isModalOpen && winner && (
+            <WinnerModal
+              isOpen={true} // ✅ 明示的に true を渡す（型エラー防止）
+              winner={winner}
+              onClose={() => setIsModalOpen(false)}
+            />
+          )}
         </main>
       ) : (
         // 🎰 スロットモード
         <main className={styles.main}>
-          <SlotMachine
-            questions={[
-              "好きな食べ物は？",
-              "最近ハマってることは？",
-              "子どもの頃の夢は？",
-            ]}
-            isSpinning={isSpinning}
-            selectedQuestion={winner ? winner.label : ""}
-            onStart={handleSpin}
-            disabled={isSpinning}
-          />
+          <SlotMachine /> {/* ← これだけでOK！ */}
           <button
             onClick={() => router.push("/admin")}
             className={styles.settingsButton}
