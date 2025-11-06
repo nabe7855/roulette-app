@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import styles from './NewSlotMachine.module.css';
+"use client";
 
-// --- 定数定義 ---
-const SYMBOLS = ['7', '🍒', '🔔', '🍋', '🍉'];
-const REEL_COUNT = 1;
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { supabase } from "../../../lib/supabaseClient";
+import styles from "./NewSlotMachine.module.css";
 
 // --- 型定義 ---
 type ReelProps = {
@@ -23,48 +22,54 @@ type SymbolDisplayProps = {
   symbolHeightRem: number;
 };
 
-// 💡 NewSlotMachine の Props型
-type NewSlotMachineProps = {
-  questions?: string[];
-  isSpinning?: boolean;
-  selectedQuestion?: string;
-  onStart?: () => void;
-  disabled?: boolean;
-};
-
 // --- コンポーネント群 ---
-
-const SymbolDisplay: React.FC<SymbolDisplayProps> = ({ symbol, symbolHeightRem }) => {
-  const isSeven = symbol === '7';
+const SymbolDisplay: React.FC<SymbolDisplayProps> = ({
+  symbol,
+  symbolHeightRem,
+}) => {
   return (
-    <div className={styles.symbolDisplay} style={{ height: `${symbolHeightRem}rem` }}>
-      <span className={isSeven ? styles.seven : styles.symbol}>{symbol}</span>
+    <div
+      className={styles.symbolDisplay}
+      style={{ height: `${symbolHeightRem}rem` }}
+    >
+      <span className={styles.symbol}>{symbol}</span>
     </div>
   );
 };
 
-const Reel: React.FC<ReelProps> = React.memo(({ finalSymbol, isSpinning, symbolHeightRem }) => {
-  const reelSymbols = useMemo(() => [...SYMBOLS, ...SYMBOLS], []);
-  const finalPositionIndex = SYMBOLS.length + SYMBOLS.indexOf(finalSymbol);
-  const finalTranslateY = `-${finalPositionIndex * symbolHeightRem}rem`;
+const Reel: React.FC<ReelProps> = React.memo(
+  ({ finalSymbol, isSpinning, symbolHeightRem }) => {
+    const reelSymbols = useMemo(() => [finalSymbol, finalSymbol, finalSymbol], [
+      finalSymbol,
+    ]);
 
-  return (
-    <div className={styles.reelContainer} style={{ height: `${symbolHeightRem}rem` }}>
+    const finalTranslateY = `-${symbolHeightRem}rem`;
+
+    return (
       <div
-        className={`${styles.reelInner} ${isSpinning ? styles.reelSpinning : ''}`}
-        style={{
-          transform: isSpinning ? undefined : `translateY(${finalTranslateY})`,
-          transition: isSpinning ? 'none' : 'transform 3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-        }}
+        className={styles.reelContainer}
+        style={{ height: `${symbolHeightRem}rem` }}
       >
-        {reelSymbols.map((s, i) => (
-          <SymbolDisplay key={i} symbol={s} symbolHeightRem={symbolHeightRem} />
-        ))}
+        <div
+          className={`${styles.reelInner} ${
+            isSpinning ? styles.reelSpinning : ""
+          }`}
+          style={{
+            transform: isSpinning ? undefined : `translateY(${finalTranslateY})`,
+            transition: isSpinning
+              ? "none"
+              : "transform 2.5s cubic-bezier(0.25, 0.1, 0.25, 1)",
+          }}
+        >
+          {reelSymbols.map((s, i) => (
+            <SymbolDisplay key={i} symbol={s} symbolHeightRem={symbolHeightRem} />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-});
-Reel.displayName = 'Reel';
+    );
+  }
+);
+Reel.displayName = "Reel";
 
 const Lever: React.FC<LeverProps> = ({ onSpin, isSpinning }) => {
   const [pulled, setPulled] = useState(false);
@@ -79,95 +84,90 @@ const Lever: React.FC<LeverProps> = ({ onSpin, isSpinning }) => {
   return (
     <div className={styles.leverContainer} onClick={handlePull}>
       <div
-        className={`${styles.leverBall} ${pulled ? styles.leverPulled : ''} ${
-          isSpinning ? styles.leverDisabled : ''
-        }`}
+        className={`${styles.leverBall} ${
+          pulled ? styles.leverPulled : ""
+        } ${isSpinning ? styles.leverDisabled : ""}`}
       />
-      <div className={`${styles.leverRod} ${pulled ? styles.leverRodPulled : ''}`} />
+      <div
+        className={`${styles.leverRod} ${pulled ? styles.leverRodPulled : ""}`}
+      />
     </div>
   );
 };
 
-// --- メイン ---
-export default function NewSlotMachine({
-  questions = [],
-  onStart,
-  disabled,
-}: NewSlotMachineProps) {
-
-  const [reels, setReels] = useState<string[]>(['7']);
+// --- メインコンポーネント ---
+export default function NewSlotMachine() {
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [reels, setReels] = useState<string[]>([""]);
   const [spinningReels, setSpinningReels] = useState<boolean[]>([false]);
-  const [message, setMessage] = useState('BIG WIN');
+  const [message, setMessage] = useState("スロットを回してね！");
   const [isSpinning, setIsSpinning] = useState(false);
-  const [symbolHeightRem, setSymbolHeightRem] = useState(10);
+  const [symbolHeightRem, setSymbolHeightRem] = useState(8);
 
-  // 💡 質問の表示用（データベース連携確認用）
-  const [currentQuestion, setCurrentQuestion] = useState<string>('');
+  // --- Supabaseから質問を取得 ---
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("question_text")
+        .eq("type", "slot");
 
+      if (error) {
+        console.error("質問データの取得に失敗:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const slotQuestions = data.map(
+          (item: { question_text: string }) => item.question_text
+        );
+        setQuestions(slotQuestions);
+        setReels([slotQuestions[0]]); // 初期表示
+      }
+    };
+    fetchQuestions();
+  }, []);
+
+  // --- 画面サイズでリール高さを調整 ---
   useEffect(() => {
     const handleResize = () => {
       setSymbolHeightRem(window.innerWidth < 640 ? 8 : 10);
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // --- 質問データがある場合に1つランダムに選ぶ ---
-  useEffect(() => {
-  if (questions.length > 0) {
-    const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
-    setTimeout(() => setCurrentQuestion(randomQuestion), 0);
-  }
-}, [questions]);
-
-
-  const isWinner = message === 'BIG WIN';
-
-  useEffect(() => {
-    if (!isSpinning) {
-      const allSevens = reels.every((symbol) => symbol === '7');
-      setTimeout(() => {
-        setMessage(allSevens ? 'BIG WIN' : 'TRY AGAIN');
-      }, 0);
-    }
-  }, [reels, isSpinning]);
-
+  // --- スピン処理 ---
   const handleSpin = useCallback(() => {
-    if (isSpinning) return;
-    if (onStart) onStart(); // 親（page.tsx）に通知
+    if (isSpinning || questions.length === 0) return;
+
     setIsSpinning(true);
-    setMessage('SPINNING');
+    setMessage("スピン中... 🎰");
     setSpinningReels([true]);
 
-    const newReels = Array(REEL_COUNT)
-      .fill(null)
-      .map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
-    setReels(newReels);
+    // ランダムに質問を選択
+    const randomIndex = Math.floor(Math.random() * questions.length);
+    const selectedQuestion = questions[randomIndex];
 
     setTimeout(() => {
+      setReels([selectedQuestion]);
       setSpinningReels([false]);
       setIsSpinning(false);
+      setMessage("結果発表 🎉");
     }, 3000);
-  }, [isSpinning, onStart]);
+  }, [isSpinning, questions]);
 
   return (
     <main className={styles.container}>
       <div className={styles.machine}>
         <div className={styles.body}>
-          {/* トップサイン */}
-          <div className={`${styles.topSign} ${isWinner ? styles.winGlow : ''}`}>
+          {/* 上部メッセージ */}
+          <div className={styles.topSign}>
             <div className={styles.signText}>{message}</div>
           </div>
 
-          {/* 💬 データベースからの質問を表示 */}
-          {currentQuestion && (
-            <div className={styles.questionBox}>
-              <p className={styles.questionText}>{currentQuestion}</p>
-            </div>
-          )}
-
-          {/* リール */}
+          {/* 🎯 質問（＝リール内容）表示 */}
           <div className={styles.reelArea}>
             {reels.map((symbol, index) => (
               <Reel
@@ -180,17 +180,19 @@ export default function NewSlotMachine({
             ))}
           </div>
 
-          {/* ボタン */}
+          {/* スピンボタン */}
           <div className={styles.bottomPanel}>
             <button
               onClick={handleSpin}
-              disabled={isSpinning || disabled}
+              disabled={isSpinning}
               className={styles.spinButton}
             >
               SPIN
             </button>
           </div>
         </div>
+
+        {/* レバー */}
         <Lever onSpin={handleSpin} isSpinning={isSpinning} />
       </div>
     </main>

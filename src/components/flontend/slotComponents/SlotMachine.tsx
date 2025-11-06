@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// SlotMachine.tsx の4行目を変更
+import { supabase } from "@/lib/supabaseClient"; // ✅ Supabase追加
 import styles from "./SlotMachine.module.css";
-
 
 /** 🎯 Props定義 */
 interface SlotMachineProps {
-  questions: string[];
   isSpinning: boolean;
   selectedQuestion: string;
   onStart: () => void;
@@ -39,26 +37,47 @@ const WinnerModal: React.FC<WinnerModalProps> = ({ isOpen, question, onClose }) 
 
 /** 🎰 スロットマシン本体 */
 const SlotMachine: React.FC<SlotMachineProps> = ({
-  questions,
   isSpinning,
   selectedQuestion,
   onStart,
   disabled,
 }) => {
-  const [mounted, setMounted] = useState(false);
+  const [questions, setQuestions] = useState<string[]>([]);
   const [displayQuestion, setDisplayQuestion] = useState(selectedQuestion);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  /** ✅ マウント時処理（SSR対策） */
+  /** ✅ SSR対策 */
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  /** 🧩 Supabaseから「slot」タイプの質問を取得 */
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("question_text")
+        .eq("type", "slot"); // ✅ スロット専用だけ取得
+
+      if (error) {
+        console.error("質問データの取得に失敗:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setQuestions(data.map((item) => item.question_text));
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
   /** 🎰 スロットスピン処理 */
   const handleSlotSpin = () => {
-    if (isSpinning || disabled) return;
+    if (isSpinning || disabled || questions.length === 0) return;
 
-    onStart(); // ← 外から渡されたスピン処理呼び出し
+    onStart();
     setIsModalOpen(false);
 
     let count = 0;
@@ -78,28 +97,22 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
     }, 80);
   };
 
-  /** 🎨 JSX描画 */
   if (!mounted) return null;
 
+  /** 🎨 JSX */
   return (
     <div className={styles.wrapper}>
       <div className={styles.machine}>
         <div className={styles.title}>SLOT</div>
 
         <div className={styles.display}>
-          <p
-            className={`${styles.question} ${
-              isSpinning ? styles.spinning : ""
-            }`}
-          >
+          <p className={`${styles.question} ${isSpinning ? styles.spinning : ""}`}>
             {displayQuestion || "？"}
           </p>
         </div>
 
         <div
-          className={`${styles.lever} ${
-            isSpinning ? styles.disabled : ""
-          }`}
+          className={`${styles.lever} ${isSpinning ? styles.disabled : ""}`}
           onClick={!isSpinning ? handleSlotSpin : undefined}
         >
           <div className={styles.leverStick}></div>

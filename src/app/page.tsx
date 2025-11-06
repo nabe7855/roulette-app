@@ -1,13 +1,14 @@
 "use client";
+
 import React, { useState } from "react";
 import RouletteWheel from "../components/flontend/Rolletecomponents/RouletteWheel";
 import Header from "../components/flontend/Rolletecomponents/Header";
 import SegmentControl from "../components/flontend/Rolletecomponents/SegmentControl";
 import WinnerModal from "../components/flontend/Rolletecomponents/WinnerModal";
 import SpinButton from "../components/flontend/Rolletecomponents/SpinButton";
-import SlotMachine from "../components/flontend/slotComponents/NewSlotMachine";
+import NewSlotMachine from "../components/flontend/slotComponents/NewSlotMachine"; // ✅ 修正済み
 import { useRouter } from "next/navigation";
-import { Segment } from "../types/types"; // ✅ 型をimport
+import { Segment } from "../types/types";
 import styles from "./page.module.css";
 
 const Page: React.FC = () => {
@@ -20,7 +21,6 @@ const Page: React.FC = () => {
 
   const router = useRouter();
 
-  // 🎡 スピン処理
   const handleSpin = (): void => {
     if (isSpinning) return;
     setIsSpinning(true);
@@ -34,13 +34,11 @@ const Page: React.FC = () => {
     }, 6000);
   };
 
-  // 🎯 回転完了時（RouletteWheelから結果を受け取る）
   const handleFinished = (winnerSegment: Segment): void => {
     setWinner(winnerSegment);
     setIsModalOpen(true);
   };
 
-  // ⚙️ セグメント数変更
   const handleNumberOfSegmentsChange = (value: number): void => {
     setNumberOfSegments(value);
   };
@@ -49,7 +47,6 @@ const Page: React.FC = () => {
     <div className={styles.container}>
       <Header />
 
-      {/* 🎛 モード切替 */}
       <div className={styles.modeToggle}>
         <span
           className={
@@ -77,13 +74,12 @@ const Page: React.FC = () => {
         </span>
       </div>
 
-      {/* 🎡 ルーレットモード */}
       {isRouletteMode ? (
         <main className={styles.main}>
           <RouletteWheel
             rotation={rotation}
             isSpinning={isSpinning}
-            onFinished={handleFinished} // ✅ ここで結果を親へ通知
+            onFinished={handleFinished}
             openSettings={() => router.push("/admin")}
           />
 
@@ -96,30 +92,17 @@ const Page: React.FC = () => {
             <SpinButton onSpin={handleSpin} isSpinning={isSpinning} />
           </div>
 
-         {/* 🎯 結果モーダル */}
-{isModalOpen && winner && (
-  <WinnerModal
-    isOpen={true} // ✅ 明示的に true を渡す（型エラー防止）
-    winner={winner}
-    onClose={() => setIsModalOpen(false)}
-  />
-)}
-
+          {isModalOpen && winner && (
+            <WinnerModal
+              isOpen={true}
+              winner={winner}
+              onClose={() => setIsModalOpen(false)}
+            />
+          )}
         </main>
       ) : (
-        // 🎰 スロットモード
         <main className={styles.main}>
-          <SlotMachine
-            questions={[
-              "好きな食べ物は？",
-              "最近ハマってることは？",
-              "子どもの頃の夢は？",
-            ]}
-            isSpinning={isSpinning}
-            selectedQuestion={winner ? winner.label : ""}
-            onStart={handleSpin}
-            disabled={isSpinning}
-          />
+          <NewSlotMachine /> {/* ✅ ここがSupabase連携スロット */}
           <button
             onClick={() => router.push("/admin")}
             className={styles.settingsButton}
