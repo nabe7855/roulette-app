@@ -1,0 +1,126 @@
+/* === AdminDashboard.module.css === */
+
+/* 全体のコンテナ */
+.container {
+  padding: 24px;
+  background-color: #f5f6fa;
+  font-family: "Segoe UI", sans-serif;
+  color: #222;
+}
+
+/* ヘッダー */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ログアウトボタン */
+.logoutButton {
+  display: flex;
+  align-items: center;
+  background-color: #1976d2;
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.logoutButton:hover {
+  background-color: #115293;
+}
+
+/* 質問カード */
+.questionCard {
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* テーブル部分 */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid #ddd;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.table th {
+  background-color: #eaeaea;
+}
+
+.addButton {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.addButton:hover {
+  background-color: #3b8e3b;
+}
+/* === AdminDashboard.module.css === */
+
+.container {
+  min-height: 100vh;
+  background-color: #f5f6fa;
+  font-family: "Segoe UI", sans-serif;
+  padding: 0;
+  margin: 0;
+}
+
+.main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.panel {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tabContainer {
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+
+.tabs {
+  display: flex;
+  gap: 20px;
+  padding-bottom: 8px;
+}
+.modalContainer {
+  max-height: 75vh; /* モーダル内に収まるように */
+  overflow-y: auto;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.dashboardInner {
+  max-width: 800px;
+  margin: 0 auto;
+}

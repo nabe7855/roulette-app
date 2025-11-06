@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 // 型定義と汎用モーダルコンポーネントをインポートします。
 import type { Question, QuestionType } from '../types';
-import Modal from './Modal';
+import Modal from '../../Modal';
 
 // QuestionModalコンポーネントが受け取るデータ（props）の型を定義します。
 interface QuestionModalProps {

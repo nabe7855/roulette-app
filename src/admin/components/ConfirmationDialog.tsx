@@ -1,6 +1,6 @@
 // Reactライブラリと汎用モーダルコンポーネントをインポートします。
 import React from 'react';
-import Modal from './Modal';
+import Modal from '../../Modal';
 
 // ConfirmationDialogコンポーネントが受け取るデータ（props）の型を定義します。
 interface ConfirmationDialogProps {

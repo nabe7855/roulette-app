@@ -6,8 +6,8 @@ import Header from "../components/Header";
 import SegmentControl from "../components/SegmentControl";
 import SpinButton from "../components/SpinButton";
 import SlotMachine from "../slotComponents/SlotMachine";
-import SettingsModal from "../components/SettingsModal";
 import { useRoulette } from "../hooks/useRoulette";
+import { useRouter } from "next/navigation"; // ✅ 追加
 import styles from "./page.module.css";
 
 const Page: React.FC = () => {
@@ -24,7 +24,7 @@ const Page: React.FC = () => {
   } = useRoulette();
 
   const [isRouletteMode, setIsRouletteMode] = useState(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const router = useRouter(); // ✅ ページ遷移用
 
   return (
     <div className={styles.container}>
@@ -64,7 +64,7 @@ const Page: React.FC = () => {
           <RouletteWheel
             segments={currentSegments}
             rotation={rotation}
-            openSettings={() => setIsSettingsOpen(true)}
+            openSettings={() => router.push("/admin")} // ✅ ページ遷移に変更！
           />
           <div className={styles.controlArea}>
             <SegmentControl
@@ -80,28 +80,25 @@ const Page: React.FC = () => {
           )}
         </main>
       ) : (
-       <main className={styles.main}>
-  <SlotMachine
-    questions={["好きな食べ物は？",
-    "最近ハマってることは？",
-    "子どもの頃の夢は？"]}  // ← 仮のデータ（後で本物に差し替える）
-    isSpinning={isSpinning}
-    selectedQuestion={winner ? winner.label : ""}
-    onStart={handleSpin}
-    disabled={isSpinning}
-  />
-  <button
-    onClick={() => setIsSettingsOpen(true)}
-    className={styles.settingsButton}
-  >
-    ⚙ 設定
-  </button>
-</main>
-
-      )}
-
-      {isSettingsOpen && (
-        <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+        <main className={styles.main}>
+          <SlotMachine
+            questions={[
+              "好きな食べ物は？",
+              "最近ハマってることは？",
+              "子どもの頃の夢は？",
+            ]} // ← 仮のデータ（後で本物に差し替える）
+            isSpinning={isSpinning}
+            selectedQuestion={winner ? winner.label : ""}
+            onStart={handleSpin}
+            disabled={isSpinning}
+          />
+          <button
+            onClick={() => router.push("/admin")} // ✅ こっちもページ遷移に変更！
+            className={styles.settingsButton}
+          >
+            ⚙ 設定
+          </button>
+        </main>
       )}
     </div>
   );

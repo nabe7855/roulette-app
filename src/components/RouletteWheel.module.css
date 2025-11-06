@@ -1,11 +1,14 @@
+/* 🎡 ルーレット全体のラッパー */
 .rouletteWrapper {
-  position: relative;
+  /* position: relative; ← これが原因だったので削除！ */
+  position: static; /* ✅ モーダルが画面全体で固定されるように変更 */
   margin: 0 auto;
   aspect-ratio: 1 / 1;
   max-width: 90vw;
   z-index: 0; /* ✅ モーダルより後ろにする */
 }
 
+/* ⚙ 設定ボタン */
 .settingsButton {
   position: absolute;
   top: 1rem;
@@ -19,18 +22,23 @@
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   z-index: 1; /* ✅ ボタンは前面に出す（でもモーダルより下） */
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .settingsButton:hover {
   background: #db2777;
+  transform: scale(1.05);
 }
 
+/* 🎨 SVG（ルーレット本体） */
 .svg {
   width: 100%;
   height: 100%;
+  display: block;
   z-index: 0;
 }
 
+/* 🔺 針 */
 .pointer {
   position: absolute;
   top: 0;
@@ -42,5 +50,5 @@
   border-right: 12px solid transparent;
   border-top: 25px solid #ec4899;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  z-index: 1; /* 針は前面 */
+  z-index: 1; /* ✅ 針はルーレットより前面 */
 }
