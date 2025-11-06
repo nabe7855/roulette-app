@@ -1,0 +1,261 @@
+/* === NewSlotMachine.module.css === */
+
+.container {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.machine {
+  position: relative;
+  transform: scale(1);
+  max-width: 360px;
+  width: 90%;
+}
+
+.body {
+  background: linear-gradient(to bottom, #facc15, #eab308);
+  padding: 1rem;
+  border-radius: 1.2rem;
+  border: 4px solid #ca8a04;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.topSign {
+  background: #000;
+  border: 2px solid #334155;
+  border-radius: 0.5rem;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.signText {
+  font-family: 'Staatliches', sans-serif;
+  font-size: 2.5rem;
+  color: #facc15;
+  letter-spacing: 0.1em;
+}
+
+.reelArea {
+  background: #000;
+  border: 2px solid #1e293b;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 160px;
+  overflow: hidden;
+}
+
+.reelContainer {
+  background: #f1f5f9;
+  border: 2px solid #94a3b8;
+  border-radius: 0.5rem;
+  width: 220px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.symbolDisplay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.seven {
+  color: #dc2626;
+}
+
+.symbol {
+  color: #1e293b;
+}
+
+.bottomPanel {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.spinButton {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ef4444, #b91c1c);
+  border: 4px solid #7f1d1d;
+  color: white;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #7f1d1d;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.spinButton:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #7f1d1d;
+}
+
+.leverContainer {
+  position: absolute;
+  right: -40px;
+  top: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.leverBall {
+  width: 24px;
+  height: 24px;
+  background: #dc2626;
+  border: 2px solid #7f1d1d;
+  border-radius: 50%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s;
+}
+
+.leverPulled {
+  transform: translateY(40px);
+}
+
+.leverRod {
+  width: 6px;
+  height: 90px;
+  background: #334155;
+  border-radius: 0 0 4px 4px;
+  transition: transform 0.3s;
+}
+
+.leverRodPulled {
+  transform: rotate(40deg);
+}
+
+.light {
+  width: 10px;
+  height: 10px;
+  background: #854d0e;
+  border-radius: 50%;
+}
+
+.lightFlash {
+  animation: flash 0.6s infinite alternate;
+}
+
+@keyframes flash {
+  from {
+    background: #fde68a;
+  }
+  to {
+    background: #facc15;
+  }
+}
+/* === スロットアニメーション (上司AI版から移植) === */
+
+@keyframes reel-spin {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.animate-reel-spin {
+  animation: reel-spin 0.2s linear infinite;
+}
+
+@keyframes win-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px 5px rgba(252, 211, 77, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 30px 10px rgba(252, 211, 77, 1);
+  }
+}
+
+.win-glow {
+  animation: win-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes light-flash {
+  0%, 100% {
+    background-color: #f3e5ab;
+    box-shadow: 0 0 2px #f3e5ab;
+  }
+  50% {
+    background-color: #fffbeb;
+    box-shadow: 0 0 5px #fffbeb, 0 0 10px #fffbeb;
+  }
+}
+
+.light-flash {
+  animation: light-flash 1s ease-in-out infinite;
+}
+/* =======================================
+   🎡 Slot Machine Animation Tweaks
+   ======================================= */
+
+/* スピン中：少し速めで滑らかにループ */
+@keyframes reel-spin {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.reelSpinning {
+  animation: reel-spin 0.18s linear infinite;
+}
+
+/* 停止時：イーズアウトでスッと止まる（App側のtransitionと連動） */
+.reelInner {
+  transition: transform 3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 勝利時のサインの光 */
+@keyframes win-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px 5px rgba(252, 211, 77, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 30px 10px rgba(252, 211, 77, 1);
+  }
+}
+.winGlow {
+  animation: win-glow 1.5s ease-in-out infinite;
+}
+
+/* 周囲ライトの点滅（ランダム遅延あり） */
+@keyframes light-flash {
+  0%, 100% {
+    background-color: #f3e5ab;
+    box-shadow: 0 0 2px #f3e5ab;
+  }
+  50% {
+    background-color: #fffbeb;
+    box-shadow: 0 0 5px #fffbeb, 0 0 10px #fffbeb;
+  }
+}
+.lightFlash {
+  animation: light-flash 1s ease-in-out infinite;
+}
+
+/* レバーの球体の動き */
+.leverPulled {
+  transform: translateY(4rem);
+  transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.leverRodPulled {
+  transform: rotate(45deg);
+  transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
