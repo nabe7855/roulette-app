@@ -32,8 +32,11 @@ const AdminPage: React.FC = () => {
   // ✏️ 状態管理
   const [newQuestion, setNewQuestion] = useState("");
   const [questions, setQuestions] = useState<DBQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showUsed, setShowUsed] = useState(false); // ✅ 使用済みタブ切替
+
+  // ✏️ 編集モード用
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
 
   const isRoulette = mode === AppMode.Roulette;
 
@@ -49,14 +52,18 @@ const AdminPage: React.FC = () => {
     } else {
       setQuestions(data || []);
     }
-    setLoading(false);
+  
   };
 
   useEffect(() => {
-    fetchQuestions();
-  }, []);
+  const load = async () => {
+    await fetchQuestions();
+  };
+  load();
+}, []);
 
-  // 💾 質問追加（Supabase＋ローカル両方）
+
+  // 💾 質問追加
   const handleAddQuestion = async () => {
     if (!newQuestion.trim()) return;
 
@@ -67,7 +74,6 @@ const AdminPage: React.FC = () => {
       type: isRoulette ? "roulette" : "slot",
     };
 
-    // 🔹 ローカル保存
     const localItem: Question = {
       id: newItem.id,
       text: newItem.question_text,
@@ -80,7 +86,6 @@ const AdminPage: React.FC = () => {
       setSlotQuestions([...slotQuestions, localItem]);
     }
 
-    // 🔹 Supabaseに保存
     const { error } = await supabase.from("questions").insert([newItem]);
 
     if (error) {
@@ -93,7 +98,7 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // ❌ 質問削除（Supabase＋ローカル両方から）
+  // ❌ 質問削除
   const handleDeleteQuestion = async (id: string, type: "roulette" | "slot") => {
     const { error } = await supabase.from("questions").delete().eq("id", id);
     if (error) {
@@ -109,6 +114,43 @@ const AdminPage: React.FC = () => {
     }
 
     console.log("🗑️ 削除完了:", id);
+    await fetchQuestions();
+  };
+
+  // ✏️ 編集開始
+  const handleEditStart = (id: string, text: string) => {
+    setEditingId(id);
+    setEditingText(text);
+  };
+
+  // 💾 編集保存
+  const handleEditSave = async (id: string, type: "roulette" | "slot") => {
+    const { error } = await supabase
+      .from("questions")
+      .update({ question_text: editingText })
+      .eq("id", id);
+
+    if (error) {
+      console.error("❌ 更新エラー:", error);
+      alert("更新に失敗しました。");
+      return;
+    }
+
+    // 🔄 ローカル更新
+    const updateLocal = (list: Question[]) =>
+      list.map((q) =>
+        q.id === id ? { ...q, text: editingText } : q
+      );
+
+    if (type === "roulette") {
+      setRouletteQuestions(updateLocal(rouletteQuestions));
+    } else {
+      setSlotQuestions(updateLocal(slotQuestions));
+    }
+
+    console.log("✏️ 更新完了:", id);
+    setEditingId(null);
+    setEditingText("");
     await fetchQuestions();
   };
 
@@ -128,6 +170,103 @@ const AdminPage: React.FC = () => {
   const slotCount = mergedSlot.length;
   const slotUsed = mergedSlot.filter((q) => q.used).length;
 
+  // 🎡 共通リストレンダリング関数
+  const renderList = (
+    data: (Question | DBQuestion)[],
+    type: "roulette" | "slot"
+  ) => (
+    <ul>
+      {data
+        .filter((q) => (showUsed ? q.used : !q.used))
+        .map((q) => {
+          const text = "text" in q ? q.text : q.question_text;
+          const isEditing = editingId === q.id;
+          return (
+            <li
+              key={q.id}
+              style={{
+                marginBottom: "0.5rem",
+                opacity: showUsed ? 0.6 : 1,
+              }}
+            >
+              {isEditing ? (
+                <>
+                  <input
+                    type="text"
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    style={{ marginRight: "0.5rem" }}
+                  />
+                  <button
+                    onClick={() => handleEditSave(q.id, type)}
+                    style={{
+                      backgroundColor: "#00b894",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      cursor: "pointer",
+                      marginRight: "0.3rem",
+                    }}
+                  >
+                    保存
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingId(null);
+                      setEditingText("");
+                    }}
+                    style={{
+                      backgroundColor: "#666",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    キャンセル
+                  </button>
+                </>
+              ) : (
+                <>
+                  {type === "roulette" ? "🎡" : "🎰"} {text}
+                  <button
+                    onClick={() => handleEditStart(q.id, text)}
+                    style={{
+                      marginLeft: "0.5rem",
+                      backgroundColor: "#ffa502",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    編集
+                  </button>
+                  <button
+                    onClick={() => handleDeleteQuestion(q.id, type)}
+                    style={{
+                      marginLeft: "0.3rem",
+                      backgroundColor: "#ff5c5c",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    削除
+                  </button>
+                </>
+              )}
+            </li>
+          );
+        })}
+    </ul>
+  );
+
   return (
     <div className="app-container">
       {/* 🔙 戻るボタン */}
@@ -137,7 +276,7 @@ const AdminPage: React.FC = () => {
 
       <header className="app-header">
         <h1>ルーレット＆スロット 質問管理</h1>
-        <p>ゲームモードを選択して、質問を管理してください。</p>
+        <p>質問の追加・削除・編集ができます。</p>
       </header>
 
       <main className="app-main">
@@ -150,6 +289,7 @@ const AdminPage: React.FC = () => {
             <p>登録数: {rouletteCount} / 200</p>
             <p>使用済み: {rouletteUsed}</p>
 
+            {/* 追加フォーム */}
             <div style={{ marginTop: "1rem" }}>
               <input
                 type="text"
@@ -160,7 +300,7 @@ const AdminPage: React.FC = () => {
               <button onClick={handleAddQuestion}>追加</button>
             </div>
 
-            {/* 🎡 タブ切替 */}
+            {/* タブ切替 */}
             <div style={{ marginTop: "1.5rem" }}>
               <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
                 <button
@@ -190,37 +330,7 @@ const AdminPage: React.FC = () => {
                   ✅ 使用済み
                 </button>
               </div>
-
-              {/* 🎡 リスト */}
-              <ul>
-                {mergedRoulette
-                  .filter((q) => (showUsed ? q.used : !q.used))
-                  .map((q) => (
-                    <li
-                      key={q.id}
-                      style={{
-                        marginBottom: "0.5rem",
-                        opacity: showUsed ? 0.6 : 1,
-                      }}
-                    >
-                      🎡 {"text" in q ? q.text : q.question_text}
-                      <button
-                        onClick={() => handleDeleteQuestion(q.id, "roulette")}
-                        style={{
-                          marginLeft: "0.5rem",
-                          backgroundColor: "#ff5c5c",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          padding: "2px 6px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        削除
-                      </button>
-                    </li>
-                  ))}
-              </ul>
+              {renderList(mergedRoulette, "roulette")}
             </div>
           </section>
         ) : (
@@ -240,7 +350,6 @@ const AdminPage: React.FC = () => {
               <button onClick={handleAddQuestion}>追加</button>
             </div>
 
-            {/* 🎰 タブ切替 */}
             <div style={{ marginTop: "1.5rem" }}>
               <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
                 <button
@@ -270,37 +379,7 @@ const AdminPage: React.FC = () => {
                   ✅ 使用済み
                 </button>
               </div>
-
-              {/* 🎰 リスト */}
-              <ul>
-                {mergedSlot
-                  .filter((q) => (showUsed ? q.used : !q.used))
-                  .map((q) => (
-                    <li
-                      key={q.id}
-                      style={{
-                        marginBottom: "0.5rem",
-                        opacity: showUsed ? 0.6 : 1,
-                      }}
-                    >
-                      🎰 {"text" in q ? q.text : q.question_text}
-                      <button
-                        onClick={() => handleDeleteQuestion(q.id, "slot")}
-                        style={{
-                          marginLeft: "0.5rem",
-                          backgroundColor: "#ff5c5c",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          padding: "2px 6px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        削除
-                      </button>
-                    </li>
-                  ))}
-              </ul>
+              {renderList(mergedSlot, "slot")}
             </div>
           </section>
         )}
