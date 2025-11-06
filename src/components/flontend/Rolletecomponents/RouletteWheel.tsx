@@ -1,10 +1,11 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react"; // ← 🆕 useCallback追加
 import { Segment } from "../../../types/types";
 import { polarToCartesian, describeArc } from "../../../utils/svgUtils";
 import styles from "./RouletteWheel.module.css";
 import { supabase } from "@/src/lib/supabaseClient";
 import WinnerModal from "../Rolletecomponents/WinnerModal";
+import ResetUsedQuestionsButton from "../Rolletecomponents/ResetUsedQuestionsButton"; // ← 🆕 追加
 
 interface RouletteWheelProps {
   rotation: number;
@@ -25,34 +26,35 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
 
   const numSegments = 8;
 
-  // 🎯 Supabaseから未使用の質問を取得
+  // 🎯 質問取得関数をuseCallback化して、他でも呼べるようにする
+  const fetchQuestions = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("questions")
+      .select("id, question_text, used")
+      .eq("type", "roulette")
+      .eq("used", false);
+
+    if (error) {
+      console.error("❌ 質問取得エラー:", error);
+      return;
+    }
+
+    const shuffled = data.sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, numSegments);
+
+    const generatedSegments: Segment[] = selected.map((q, i) => ({
+      id: q.id,
+      label: q.question_text,
+      color: i % 2 === 0 ? "#f472b6" : "#ec4899",
+    }));
+
+    setSegments(generatedSegments);
+  }, [numSegments]); // ← 依存配列に numSegments だけ
+
+  // 初回読み込み
   useEffect(() => {
-    const fetchQuestions = async () => {
-      const { data, error } = await supabase
-        .from("questions")
-        .select("id, question_text, used")
-        .eq("type", "roulette")
-        .eq("used", false);
-
-      if (error) {
-        console.error("❌ 質問取得エラー:", error);
-        return;
-      }
-
-      const shuffled = data.sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, numSegments);
-
-      const generatedSegments: Segment[] = selected.map((q, i) => ({
-        id: q.id,
-        label: q.question_text,
-        color: i % 2 === 0 ? "#f472b6" : "#ec4899",
-      }));
-
-      setSegments(generatedSegments);
-    };
-
     fetchQuestions();
-  }, []);
+  }, [fetchQuestions]);
 
   // 📱 サイズ調整
   useEffect(() => {
@@ -79,12 +81,12 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotation]);
 
-  // 🎯 回転完了直前に結果を予約（止まる直前でモーダル表示）
+  // 🎯 回転完了時に選ばれた質問をused:trueに更新
   useEffect(() => {
     if (segments.length === 0 || rotation === 0) return;
 
-    const spinDuration = 2500; // 回転アニメーションの時間（ms）
-    const showModalDelay = spinDuration - 200; // 💫 ちょっと早めに出す
+    const spinDuration = 2500;
+    const showModalDelay = spinDuration - 200;
 
     const timer = setTimeout(async () => {
       const normalizedRotation = ((currentRotation % 360) + 360) % 360;
@@ -92,11 +94,10 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
         Math.floor((360 - normalizedRotation) / segmentAngle) % segments.length;
       const selected = segments[index];
 
-      console.log("🎯 即時表示: 選ばれたセグメント", selected);
+      console.log("🎯 選ばれたセグメント:", selected);
       setWinner(selected);
       setIsModalOpen(true);
 
-      // ✅ Supabase更新
       const { error } = await supabase
         .from("questions")
         .update({ used: true })
@@ -105,15 +106,19 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
       if (error) {
         console.error("❌ used 更新エラー:", error);
       } else {
-        console.log(`🎯 「${selected.label}」を使用済みに更新しました！`);
+        console.log(`🎯 「${selected.label}」を使用済みにしました！`);
       }
     }, showModalDelay);
 
     return () => clearTimeout(timer);
   }, [rotation, segments, segmentAngle, currentRotation]);
 
-  // ❌ モーダルを閉じる
   const handleCloseModal = () => setIsModalOpen(false);
+
+  // 🆕 リセット完了後にfetchQuestionsを再実行するコールバック
+  const handleResetDone = () => {
+    fetchQuestions();
+  };
 
   return (
     <div className={styles.rouletteWrapper} style={{ width: `${size}px` }}>
@@ -125,6 +130,7 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
 
       {/* 🎡 ルーレット本体 */}
       <svg viewBox={`0 0 ${size} ${size}`} className={styles.svg}>
+        {/* ... ここは一切変更なし ... */}
         <g
           style={{
             transform: `rotate(${currentRotation}deg)`,
@@ -186,6 +192,11 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
 
       {/* 🎉 結果モーダル */}
       <WinnerModal isOpen={isModalOpen} winner={winner} onClose={handleCloseModal} />
+
+      {/* ♻️ リセットボタン */}
+      <div style={{ marginTop: "20px", textAlign: "center" }}>
+        <ResetUsedQuestionsButton onResetDone={handleResetDone} /> {/* 🆕ここ */}
+      </div>
     </div>
   );
 };
