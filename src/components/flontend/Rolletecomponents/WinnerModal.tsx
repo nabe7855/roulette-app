@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
-import { Segment } from "../types";
+import { Segment } from "../../../types/types";
 
 /** 🧩 Props定義 */
 interface WinnerModalProps {

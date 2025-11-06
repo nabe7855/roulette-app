@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../constants";
-import AdminPanel from "../admin/components/AdminDashboard";
+import { QUESTIONS, INITIAL_CREDITS, SPIN_COST } from "../../../constants";
 
 /* ================================
  🎀 WinnerModal（結果発表モーダル）
@@ -42,7 +41,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => (
       <h2 className="text-2xl font-bold text-pink-600 mb-4 text-center">
         ⚙️ 管理画面設定
       </h2>
-      <AdminPanel onLogout={() => console.log("ログアウトしました")} />
       <div className="text-center mt-6">
         <button
           onClick={onClose}

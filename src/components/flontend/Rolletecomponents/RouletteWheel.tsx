@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Segment } from "../types";
-import { polarToCartesian, describeArc } from "../utils/svgUtils";
+import { Segment } from "../../../types/types";
+import { polarToCartesian, describeArc } from "../../../utils/svgUtils";
 import styles from "./RouletteWheel.module.css";
 
 interface RouletteWheelProps {

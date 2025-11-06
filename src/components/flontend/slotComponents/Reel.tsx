@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { Symbol } from '../types';
-import { QUESTIONS } from '../constants';
+import type { Symbol } from '../../../types/types';
+import { QUESTIONS } from '../../../constants';
 
 interface ReelProps {
   finalSymbol: Symbol;

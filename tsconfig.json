@@ -1,25 +1,41 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    /* 🎯 出力ターゲットとモジュール設定 */
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+
+    /* 📚 標準ライブラリ */
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+
+    /* ⚙️ 開発向けオプション */
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    "incremental": true,
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "incremental": true,
+    "allowImportingTsExtensions": true,
+
+    /* 🧩 デコレータ・クラス設定（将来用） */
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+
+    /* 🧠 Next.jsプラグイン設定 */
     "plugins": [
       {
         "name": "next"
       }
     ],
+
+    /* 📁 エイリアス設定（App Router構成対応） */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./*"]
     }
   },
   "include": [

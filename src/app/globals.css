@@ -133,3 +133,82 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === グローバルカスタムスタイル === */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #111827; /* bg-gray-900 */
+  color: #f3f4f6; /* text-gray-100 */
+  font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+/* src/app/globals.css または src/App.css */
+
+/* 全体の背景・文字設定 */
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #111827; /* もともとの bg-gray-900 */
+  color: #f3f4f6; /* text-gray-100 */
+  font-family: 'Noto Sans JP', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* コンテナ */
+.app-container {
+  width: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+/* ヘッダー */
+.app-header {
+  max-width: 800px;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app-header h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #a78bfa, #6366f1); /* 紫→藍グラデ */
+  -webkit-background-clip: text;
+  color: transparent;
+  margin: 0;
+}
+
+.app-header p {
+  color: #9ca3af; /* gray-400 */
+  margin-top: 0.5rem;
+}
+
+/* メイン部分 */
+.app-main {
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* 質問管理エリア */
+.question-manager-wrapper {
+  width: 100%;
+  transition: opacity 0.3s ease-in-out;
+}

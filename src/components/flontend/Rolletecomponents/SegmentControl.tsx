@@ -1,6 +1,6 @@
 // Reactライブラリと、アプリケーションの定数を読み込んでいます。
 import React from 'react';
-import { SEGMENTS } from "../constants";
+import { SEGMENTS } from "../../../constants";
 
 
 // このコンポーネントに渡されるデータ（props）の形を定義しています。

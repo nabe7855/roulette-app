@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { Segment } from "../types";
-import { SEGMENTS, SPIN_DURATION } from "../constants";
+import { Segment } from "../types/types";
+import { SEGMENTS} from "../constants";
 
 /**
  * 🎡 useRouletteフック

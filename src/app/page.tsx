@@ -1,11 +1,11 @@
 "use client";
 import React, { useState } from "react";
-import RouletteWheel from "../components/RouletteWheel";
-import WinnerModal from "../components/WinnerModal";
-import Header from "../components/Header";
-import SegmentControl from "../components/SegmentControl";
-import SpinButton from "../components/SpinButton";
-import SlotMachine from "../slotComponents/SlotMachine";
+import RouletteWheel from "../components/flontend/Rolletecomponents/RouletteWheel";
+import WinnerModal from "../components/flontend/Rolletecomponents/WinnerModal";
+import Header from "../components/flontend/Rolletecomponents/Header";
+import SegmentControl from "../components/flontend/Rolletecomponents/SegmentControl";
+import SpinButton from "../components/flontend/Rolletecomponents/SpinButton";
+import SlotMachine from "../components/flontend/slotComponents/SlotMachine";
 import { useRoulette } from "../hooks/useRoulette";
 import { useRouter } from "next/navigation"; // ✅ 追加
 import styles from "./page.module.css";
