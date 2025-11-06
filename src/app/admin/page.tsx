@@ -29,14 +29,15 @@ const AdminPage: React.FC = () => {
     []
   );
 
-  // ✏️ 入力・状態管理
+  // ✏️ 状態管理
   const [newQuestion, setNewQuestion] = useState("");
   const [questions, setQuestions] = useState<DBQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUsed, setShowUsed] = useState(false); // ✅ 使用済みタブ切替
 
   const isRoulette = mode === AppMode.Roulette;
 
-  // 🎯 Supabaseから質問取得
+  // 🎯 Supabaseから質問を取得
   const fetchQuestions = async () => {
     const { data, error } = await supabase
       .from("questions")
@@ -55,7 +56,7 @@ const AdminPage: React.FC = () => {
     fetchQuestions();
   }, []);
 
-  // 💾 質問追加（Supabase + ローカル両方）
+  // 💾 質問追加（Supabase＋ローカル両方）
   const handleAddQuestion = async () => {
     if (!newQuestion.trim()) return;
 
@@ -66,7 +67,7 @@ const AdminPage: React.FC = () => {
       type: isRoulette ? "roulette" : "slot",
     };
 
-    // ローカル保存
+    // 🔹 ローカル保存
     const localItem: Question = {
       id: newItem.id,
       text: newItem.question_text,
@@ -79,15 +80,8 @@ const AdminPage: React.FC = () => {
       setSlotQuestions([...slotQuestions, localItem]);
     }
 
-    // Supabase保存
-    const { error } = await supabase.from("questions").insert([
-      {
-        id: newItem.id,
-        question_text: newItem.question_text,
-        used: newItem.used,
-        type: newItem.type,
-      },
-    ]);
+    // 🔹 Supabaseに保存
+    const { error } = await supabase.from("questions").insert([newItem]);
 
     if (error) {
       console.error("❌ Supabase保存エラー:", error);
@@ -99,7 +93,7 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // ❌ 削除機能（Supabase & ローカル両方から）
+  // ❌ 質問削除（Supabase＋ローカル両方から）
   const handleDeleteQuestion = async (id: string, type: "roulette" | "slot") => {
     const { error } = await supabase.from("questions").delete().eq("id", id);
     if (error) {
@@ -118,7 +112,7 @@ const AdminPage: React.FC = () => {
     await fetchQuestions();
   };
 
-  // 💡 Supabase + ローカルを合算してカウント
+  // 💡 Supabase＋ローカル合算
   const mergedRoulette = [
     ...rouletteQuestions,
     ...questions.filter((q) => q.type === "roulette"),
@@ -128,15 +122,15 @@ const AdminPage: React.FC = () => {
     ...questions.filter((q) => q.type === "slot"),
   ];
 
+  // 📊 カウント
   const rouletteCount = mergedRoulette.length;
   const rouletteUsed = mergedRoulette.filter((q) => q.used).length;
-
   const slotCount = mergedSlot.length;
   const slotUsed = mergedSlot.filter((q) => q.used).length;
 
   return (
     <div className="app-container">
-      {/* 🔙 左上固定の戻るボタン */}
+      {/* 🔙 戻るボタン */}
       <button className="back-button" onClick={() => router.push("/")}>
         ← 🎰 スロット画面に戻る
       </button>
@@ -150,6 +144,7 @@ const AdminPage: React.FC = () => {
         <ToggleSwitch mode={mode} setMode={setMode} />
 
         {isRoulette ? (
+          // 🎡 ルーレット管理
           <section className="question-manager">
             <h2>ルーレットの質問管理</h2>
             <p>登録数: {rouletteCount} / 200</p>
@@ -165,29 +160,71 @@ const AdminPage: React.FC = () => {
               <button onClick={handleAddQuestion}>追加</button>
             </div>
 
-            <ul style={{ marginTop: "1rem" }}>
-              {mergedRoulette.map((q) => (
-                <li key={q.id} style={{ marginBottom: "0.5rem" }}>
-🎡 {"text" in q ? q.text : q.question_text}
-                  <button
-                    onClick={() => handleDeleteQuestion(q.id, "roulette")}
-                    style={{
-                      marginLeft: "0.5rem",
-                      backgroundColor: "#ff5c5c",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      padding: "2px 6px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    削除
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {/* 🎡 タブ切替 */}
+            <div style={{ marginTop: "1.5rem" }}>
+              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+                <button
+                  onClick={() => setShowUsed(false)}
+                  style={{
+                    backgroundColor: !showUsed ? "#0070f3" : "#444",
+                    color: "white",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  🕹 未使用
+                </button>
+                <button
+                  onClick={() => setShowUsed(true)}
+                  style={{
+                    backgroundColor: showUsed ? "#0070f3" : "#444",
+                    color: "white",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✅ 使用済み
+                </button>
+              </div>
+
+              {/* 🎡 リスト */}
+              <ul>
+                {mergedRoulette
+                  .filter((q) => (showUsed ? q.used : !q.used))
+                  .map((q) => (
+                    <li
+                      key={q.id}
+                      style={{
+                        marginBottom: "0.5rem",
+                        opacity: showUsed ? 0.6 : 1,
+                      }}
+                    >
+                      🎡 {"text" in q ? q.text : q.question_text}
+                      <button
+                        onClick={() => handleDeleteQuestion(q.id, "roulette")}
+                        style={{
+                          marginLeft: "0.5rem",
+                          backgroundColor: "#ff5c5c",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          padding: "2px 6px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        削除
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </section>
         ) : (
+          // 🎰 スロット管理
           <section className="question-manager">
             <h2>スロットの質問管理</h2>
             <p>登録数: {slotCount} / 200</p>
@@ -203,27 +240,68 @@ const AdminPage: React.FC = () => {
               <button onClick={handleAddQuestion}>追加</button>
             </div>
 
-            <ul style={{ marginTop: "1rem" }}>
-              {mergedSlot.map((q) => (
-                <li key={q.id} style={{ marginBottom: "0.5rem" }}>
-🎰 {"text" in q ? q.text : q.question_text}
-                  <button
-                    onClick={() => handleDeleteQuestion(q.id, "slot")}
-                    style={{
-                      marginLeft: "0.5rem",
-                      backgroundColor: "#ff5c5c",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      padding: "2px 6px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    削除
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {/* 🎰 タブ切替 */}
+            <div style={{ marginTop: "1.5rem" }}>
+              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+                <button
+                  onClick={() => setShowUsed(false)}
+                  style={{
+                    backgroundColor: !showUsed ? "#0070f3" : "#444",
+                    color: "white",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  🎰 未使用
+                </button>
+                <button
+                  onClick={() => setShowUsed(true)}
+                  style={{
+                    backgroundColor: showUsed ? "#0070f3" : "#444",
+                    color: "white",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✅ 使用済み
+                </button>
+              </div>
+
+              {/* 🎰 リスト */}
+              <ul>
+                {mergedSlot
+                  .filter((q) => (showUsed ? q.used : !q.used))
+                  .map((q) => (
+                    <li
+                      key={q.id}
+                      style={{
+                        marginBottom: "0.5rem",
+                        opacity: showUsed ? 0.6 : 1,
+                      }}
+                    >
+                      🎰 {"text" in q ? q.text : q.question_text}
+                      <button
+                        onClick={() => handleDeleteQuestion(q.id, "slot")}
+                        style={{
+                          marginLeft: "0.5rem",
+                          backgroundColor: "#ff5c5c",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          padding: "2px 6px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        削除
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </section>
         )}
       </main>
