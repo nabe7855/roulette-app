@@ -66,3 +66,19 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   z-index: 20;
 }
+.resetButton {
+  background-color: #2563eb; /* 青色 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  z-index: 10; /* ← これで背後の白文字を隠す */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.resetButton:hover {
+  background-color: #1e40af;
+}

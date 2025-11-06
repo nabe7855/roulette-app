@@ -1,0 +1,52 @@
+.resetButton {
+  background-color: #1f2937; /* グレー系（透けない） */
+  color: #ffffff; /* 白文字 */
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  z-index: 10; /* 背面文字を完全に隠す */
+}
+
+/* ホバー時 */
+.resetButton:hover {
+  background-color: #374151; /* 少し明るめグレー */
+}
+
+/* 押した時 */
+.resetButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* === ResetUsedQuestionsButton.module.css === */
+
+.resetButton {
+  background-color: #2563eb; /* 鮮やかな青 */
+  color: #fff; /* 白文字 */
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  position: relative;
+  z-index: 10; /* ← 背後のテキストを完全に覆う！ */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover {
+  background-color: #1e40af; /* 濃い青（hover時） */
+  transform: translateY(-1px);
+}
+
+.resetButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+}

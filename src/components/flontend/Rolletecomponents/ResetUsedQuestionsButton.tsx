@@ -1,8 +1,13 @@
 "use client";
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import styles from "./ResetUsedQuestionsButton.module.css"; // ← 追加
 
-export default function ResetUsedQuestionsButton({ onResetDone }: { onResetDone?: () => void }) {
+export default function ResetUsedQuestionsButton({
+  onResetDone,
+}: {
+  onResetDone?: () => void;
+}) {
   const supabase = createClientComponentClient();
 
   const handleResetUsedQuestions = async () => {
@@ -17,16 +22,17 @@ export default function ResetUsedQuestionsButton({ onResetDone }: { onResetDone?
       alert("リセットに失敗しました😢");
     } else {
       alert("使用済みをリセットしました✨");
-      if (onResetDone) onResetDone(); // 🆕 親に通知して再取得
+      if (onResetDone) onResetDone();
     }
   };
 
-  return (
-    <button
-      onClick={handleResetUsedQuestions}
-      className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
-    >
-      ♻️ 使用済みをリセット
-    </button>
-  );
+return (
+  <button
+    onClick={handleResetUsedQuestions}
+    className={styles.resetButton} // ← ここをCSSで管理に変更
+  >
+    ♻️ 使用済みをリセット
+  </button>
+);
+
 }
