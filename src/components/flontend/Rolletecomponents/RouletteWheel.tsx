@@ -1,11 +1,11 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react"; // ← 🆕 useCallback追加
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Segment } from "../../../types/types";
 import { polarToCartesian, describeArc } from "../../../utils/svgUtils";
 import styles from "./RouletteWheel.module.css";
 import { supabase } from "@/src/lib/supabaseClient";
 import WinnerModal from "../Rolletecomponents/WinnerModal";
-import ResetUsedQuestionsButton from "../Rolletecomponents/ResetUsedQuestionsButton"; // ← 🆕 追加
+import ResetUsedQuestionsButton from "../Rolletecomponents/ResetUsedQuestionsButton";
 
 interface RouletteWheelProps {
   rotation: number;
@@ -24,9 +24,13 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentRotation, setCurrentRotation] = useState(0);
 
+  // 🆕 “今スピン中かどうか”の安全フラグ
+  const isSpinningRef = useRef(false);
+  // 🆕 “回転が実際に行われたか”を確認するフラグ
+  const hasSpunRef = useRef(false);
+
   const numSegments = 8;
 
-  // 🎯 質問取得関数をuseCallback化して、他でも呼べるようにする
   const fetchQuestions = useCallback(async () => {
     const { data, error } = await supabase
       .from("questions")
@@ -49,14 +53,12 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
     }));
 
     setSegments(generatedSegments);
-  }, [numSegments]); // ← 依存配列に numSegments だけ
+  }, [numSegments]);
 
-  // 初回読み込み
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
 
-  // 📱 サイズ調整
   useEffect(() => {
     const updateSize = () => {
       if (window.innerWidth < 500) setSize(280);
@@ -75,20 +77,25 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
   // 🎯 回転アニメーション
   useEffect(() => {
     if (rotation !== 0) {
+      isSpinningRef.current = true;
+      hasSpunRef.current = true; // ← 実際にスピンが始まった！
       const newRotation = currentRotation + rotation;
       requestAnimationFrame(() => setCurrentRotation(newRotation));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotation]);
 
-  // 🎯 回転完了時に選ばれた質問をused:trueに更新
+  // 🎯 スピン完了 → モーダル表示
   useEffect(() => {
-    if (segments.length === 0 || rotation === 0) return;
+    // ✅ rotation が 0 なら絶対に処理しない（初期 or 自動更新対策）
+    if (segments.length === 0 || rotation === 0 || !hasSpunRef.current) return;
 
     const spinDuration = 2500;
-    const showModalDelay = spinDuration - 200;
+    const showModalDelay = spinDuration + 200;
 
     const timer = setTimeout(async () => {
+      // 🔒 スピンが発生していないならここでも抜ける
+      if (!hasSpunRef.current) return;
+
       const normalizedRotation = ((currentRotation % 360) + 360) % 360;
       const index =
         Math.floor((360 - normalizedRotation) / segmentAngle) % segments.length;
@@ -97,6 +104,8 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
       console.log("🎯 選ばれたセグメント:", selected);
       setWinner(selected);
       setIsModalOpen(true);
+      isSpinningRef.current = false;
+      hasSpunRef.current = false; // ← これで次の自動更新で再モーダル防止
 
       const { error } = await supabase
         .from("questions")
@@ -113,9 +122,18 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
     return () => clearTimeout(timer);
   }, [rotation, segments, segmentAngle, currentRotation]);
 
-  const handleCloseModal = () => setIsModalOpen(false);
+  // 💡 モーダル閉じる時：勝手に再スピンされないよう制御
+  const handleCloseModal = async () => {
+    setIsModalOpen(false);
+    setWinner(null);
+    // スピン中でなければのみ再取得
+    if (!isSpinningRef.current) {
+      setTimeout(() => {
+        fetchQuestions();
+      }, 300);
+    }
+  };
 
-  // 🆕 リセット完了後にfetchQuestionsを再実行するコールバック
   const handleResetDone = () => {
     fetchQuestions();
   };
@@ -128,9 +146,7 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
         </button>
       )}
 
-      {/* 🎡 ルーレット本体 */}
       <svg viewBox={`0 0 ${size} ${size}`} className={styles.svg}>
-        {/* ... ここは一切変更なし ... */}
         <g
           style={{
             transform: `rotate(${currentRotation}deg)`,
@@ -187,15 +203,12 @@ const RouletteWheel: React.FC<RouletteWheelProps> = ({
         />
       </svg>
 
-      {/* 🔺 針 */}
       <div className={styles.pointer} />
 
-      {/* 🎉 結果モーダル */}
       <WinnerModal isOpen={isModalOpen} winner={winner} onClose={handleCloseModal} />
 
-      {/* ♻️ リセットボタン */}
       <div style={{ marginTop: "20px", textAlign: "center" }}>
-        <ResetUsedQuestionsButton onResetDone={handleResetDone} /> {/* 🆕ここ */}
+        <ResetUsedQuestionsButton onResetDone={handleResetDone} />
       </div>
     </div>
   );
